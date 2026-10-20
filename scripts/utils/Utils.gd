@@ -15,6 +15,10 @@ func addArticle(name: String, nb: int = 1, lower: bool = true):
 		name = name.replace("Scroll", "Scrolls")
 		name = name.replace("knife", "knives")
 		name = name.replace("Lockpick", "Lockpicks")
+		name = name.replace("Ration", "Rations")
+		name = name.replace("Torch", "Torches")
+		name = name.replace("Arrow", "Arrows")
+		name = name.replace("Sling stone", "Sling stones")
 		return String(nb) + " " + name
 	var firstLetter = name[0].to_lower()
 	var article = "a"

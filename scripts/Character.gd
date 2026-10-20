@@ -14,6 +14,13 @@ onready var tween = get_node("SmoothMove")
 
 var currentVision: Array = []
 var charClass: int = 0
+var kills: int = 0
+var floorStatsFloor = 0
+var floorKillsStart = 0
+var floorChests = 0
+var floorItems = 0
+var hitBy: String = ""
+var killedBy: String = ""
 var statuses: Dictionary = {}
 var enchants: Dictionary = {}
 var pos = Vector2(0, 0)
@@ -52,11 +59,29 @@ func move(movement):
 	animator.play("walk")
 	GeneralEngine.newTurn()
 	refreshMapPosition()
-	Ref.ui.write(Ref.currentLevel.getLootMessage(pos))
+	autoPickup()
+	var lootMessage = Ref.currentLevel.getLootMessage(pos)
+	Ref.ui.write(lootMessage)
+	if lootMessage != null:
+		Tips.show("loot", "P picks things up. Gold and lockpicks are taken for you when you walk over them.")
 	if GLOBAL.trapsByPos.has(pos):
 		var trap = GLOBAL.getTrapByPos(pos)
 		if trap.hidden:
 			TrapEngine.trigger(trap, self)
+
+# Gold and lockpicks are never a choice, walking onto them takes them (P is still needed for the rest).
+# Nothing is taken from a merchant's stock.
+func autoPickup():
+	if GLOBAL.isForSell(pos):
+		return
+	var loots = GLOBAL.getItemList(pos)
+	for key in loots.keys():
+		var ids = loots[key]
+		if ids.empty():
+			continue
+		var type = GLOBAL.items[ids[0]][GLOBAL.IT_TYPE]
+		if type == GLOBAL.GO_TYPE or type == GLOBAL.LO_TYPE:
+			pickItem(ids)
 
 func moveAsync(movement):
 	var cellState = Ref.currentLevel.isCellFree(pos + movement)
@@ -67,8 +92,12 @@ func moveAsync(movement):
 		move(movement)
 		return
 	match cellState[1]:
+		"unknown", "OOB":
+			# Was silent: walking into a wall looked like the game had ignored the key
+			Sfx.play("bump")
 		"door": 
 			if GLOBAL.lockedDoors.has(pos + movement):
+				Tips.show("locked_door", "A locked door needs a lockpick. You can also look for another way round.")
 				GLOBAL.testDoor(pos + movement)
 				if inventory.lockpicks == 0:
 					Ref.ui.noLockpicksDoor()
@@ -96,6 +125,7 @@ func moveAsync(movement):
 			cellState[2].speak()
 			GeneralEngine.newTurn()
 		"pass": 
+			Tips.show("stairs", "Taking the stairs saves the game, and there is no way back up.")
 			Ref.ui.askToChangeFloor()
 			Ref.ui.askForYesNo(Ref.game)
 			var coroutineReturn = yield(Ref.ui, "coroutine_signal")
@@ -103,6 +133,7 @@ func moveAsync(movement):
 				StatusEngine.removeFloorStatuses(self)
 				Ref.game.nextFloor()
 		"chest": 
+			Tips.show("chest", "Chests may be locked. Lockpicks open them, and what is inside is worth it.")
 			var lock = GLOBAL.chests[cellState[2]][GLOBAL.CH_LOCKED]
 			if lock == 0:
 				Ref.ui.askToOpenChest()
@@ -173,6 +204,9 @@ func takeHit(dmg: int, bypassProt: int = 0):
 	realDmg = StatusEngine.decreaseStatusRanks(self, realDmg, Data.STATUS_SHIELD)
 	stats.hp -= realDmg
 	Ref.ui.writeCharacterTakeHit(realDmg)
+	Fx.hurt(self, realDmg)
+	killedBy = hitBy if hitBy != "" else "an unknown cause"
+	hitBy = ""
 	
 	# Check for death
 	if stats.hp <= 0:
@@ -189,9 +223,12 @@ func heal(amount: int):
 	var oldHp = stats.hp
 	stats.updateHp(stats.hp + amount)
 	Ref.ui.writeCharacterHeal(stats.hp - oldHp)
+	Fx.heal(self, stats.hp - oldHp)
 
 func pickItem(items: Array, price: int = 0):
 	var item = GLOBAL.items[items[0]]
+	if item[GLOBAL.IT_TYPE] != GLOBAL.GO_TYPE and item[GLOBAL.IT_TYPE] != GLOBAL.LO_TYPE:
+		floorItems += items.size()
 	for idx in items:
 		GLOBAL.removeItemFromFloor(idx)
 		match item[GLOBAL.IT_TYPE]:
@@ -208,7 +245,7 @@ func pickItem(items: Array, price: int = 0):
 				shortcuts.refreshShortcuts(item[GLOBAL.IT_STACK])
 				
 			GLOBAL.TA_TYPE: inventory.talismans.append(idx)
-			GLOBAL.LO_TYPE: inventory.lockpicks += item[GLOBAL.IT_SPEC]
+			GLOBAL.LO_TYPE: pickSupply(item)
 			GLOBAL.GO_TYPE: inventory.golds += item[GLOBAL.IT_SPEC]
 	if price > 0:
 		inventory.pay(price)
@@ -221,6 +258,17 @@ func pickItem(items: Array, price: int = 0):
 			Ref.ui.writePickupLoot(item[GLOBAL.IT_NAME], item[GLOBAL.IT_SPEC])
 		else:
 			Ref.ui.writePickupLoot(item[GLOBAL.IT_NAME], items.size())
+
+# Lockpicks, rations, torches and ammo are counted, not carried as items
+func pickSupply(item):
+	var amount = item[GLOBAL.IT_SPEC]
+	match item[GLOBAL.IT_BASE]:
+		Data.SUP_RATION: inventory.rations += amount
+		Data.SUP_TORCH: inventory.torches += amount
+		Data.SUP_ARROWS: inventory.arrows += amount
+		Data.SUP_STONES: inventory.stones += amount
+		_: inventory.lockpicks += amount
+	inventory.refreshSupplies()
 
 func dropItem(idx):
 	var item = GLOBAL.items[idx]
@@ -276,6 +324,7 @@ func quaffPotion(idx):
 	inventory.potions.erase(idx)
 	Ref.ui.writeQuaffedPotion(potion[GLOBAL.IT_NAME])
 	PotionEngine.applyEffect(self, potion[GLOBAL.IT_BASE])
+	Identify.learn("potion", potion[GLOBAL.IT_BASE], true)
 	GLOBAL.items.erase(idx)
 	shortcuts.refreshShortcuts(potion[GLOBAL.IT_STACK])
 	SpellEngine.breakSanctuary(self, SpellEngine.SANCT_POTION)
@@ -285,6 +334,9 @@ func readScroll(item: int):
 
 func castSpell(spell: int):
 	Ref.game.spellHandler.castSpellAsync(spell)
+
+func fire():
+	Ref.game.throwHandler.fireAsync()
 
 func throw(item: int):
 	Ref.game.throwHandler.throwAsync(item)
@@ -322,6 +374,7 @@ func rollPerception(cell: Vector2):
 
 func rest():
 	inventory.rests -= 1
+	Supplies.rest()
 	for a in Ref.currentLevel.allies.get_children():
 		a.queue_free()
 	StatusEngine.clearStatuses(self)
@@ -335,6 +388,7 @@ func rest():
 func refreshMapPosition():
 	tween.interpolate_property(self, "position", position, 9 * pos, 0.1, Tween.TRANS_LINEAR, Tween.EASE_IN_OUT)
 	tween.start()
+	Ref.currentLevel.centerOn(pos, false)
 
 func getRandomCloseCell():
 	if currentVision.empty():
@@ -356,12 +410,66 @@ func ignore(entity) -> bool:
 	return false
 
 func die():
+	# Write death message
+	Ref.ui.write("You have died!")
+	Sfx.stopMusic()
+	Sfx.play("player_death")
+	Fx.clearWarning()
+	# Was: always locked input and changed scene. The test harness lets the character
+	# die, so every later test ran with input off and the scene change freed Game
+	if GeneralEngine.isFaking:
+		return
 	# Disable input
 	Ref.game.set_process_input(false)
-	# Write death message
-	Ref.ui.write("You have died!")	
-	# Brief pause so player can see the death message
-	yield(get_tree().create_timer(4.0), "timeout")
-	
-	# Return to title screen
-	get_tree().change_scene("res://scenes/UI/TitleScreen.tscn")
+	# Brief pause so the death message and sound can land, then show how the run went.
+	# (Was a 4 second wait and an abrupt jump to the title screen.)
+	Progress.add("deaths")
+	Morgue.record(morgueEntry())
+	yield(get_tree().create_timer(1.5), "timeout")
+	Ref.game.gameOver.open(summaryLines())
+
+func summaryLines() -> Array:
+	var title = stats.charName
+	if Data.classes.has(charClass):
+		title += " the " + Data.classes[charClass][0]
+	return [
+		title,
+		"",
+		"Killed by " + (killedBy if killedBy != "" else "an unknown cause"),
+		"Reached floor " + str(max(1, WorldHandler.currentFloor)),
+		"Level " + str(stats.level),
+		"Enemies slain: " + str(kills),
+		"Turns survived: " + str(GeneralEngine.turn),
+		"Seed: " + str(Ref.game.runSeed),
+		"Gold: " + str(inventory.golds),
+	]
+
+func morgueEntry() -> Dictionary:
+	var d = OS.get_datetime()
+	return {
+		"name": stats.charName,
+		"class": Data.classes[charClass][0] if Data.classes.has(charClass) else "",
+		"floor": max(1, WorldHandler.currentFloor),
+		"level": stats.level,
+		"kills": kills,
+		"turns": GeneralEngine.turn,
+		"gold": inventory.golds,
+		"killer": killedBy if killedBy != "" else "an unknown cause",
+		"seed": Ref.game.runSeed,
+		"date": "%04d-%02d-%02d %02d:%02d" % [d["year"], d["month"], d["day"], d["hour"], d["minute"]],
+	}
+
+# What the player did on the floor they are leaving, shown on the title card of the next one
+func floorSummary() -> String:
+	if floorStatsFloor <= 0:
+		return ""
+	var slain = kills - floorKillsStart
+	if slain == 0 and floorChests == 0 and floorItems == 0:
+		return ""
+	return "Floor " + str(floorStatsFloor) + ": " + str(slain) + " slain, " + str(floorChests) + " chests, " + str(floorItems) + " items"
+
+func startFloorStats():
+	floorStatsFloor = max(1, WorldHandler.currentFloor)
+	floorKillsStart = kills
+	floorChests = 0
+	floorItems = 0

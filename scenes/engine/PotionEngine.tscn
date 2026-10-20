@@ -1,20 +1,6 @@
 [gd_scene load_steps=2 format=2]
 
-[sub_resource type="GDScript" id=1]
-script/source = "extends Node
-
-func applyEffect(entity, potion):
-	match potion:
-		Data.PO_HEALING:
-			healingPotion(entity)
-
-func healingPotion(entity):
-	var result:float = entity.stats.hpMax * 0.5
-	if entity is Character:
-		if Skills.hasImprovedPotions():
-			result = entity.stats.hpMax * 0.75
-	entity.heal(ceil(result))
-"
+[ext_resource path="res://scripts/engine/PotionEngine.gd" type="Script" id=1]
 
 [node name="PotionEngine" type="Node"]
-script = SubResource( 1 )
+script = ExtResource( 1 )

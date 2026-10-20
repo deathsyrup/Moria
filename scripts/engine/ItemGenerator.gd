@@ -294,7 +294,8 @@ func mapPotionToItem(potion, baseIdx):
 	var item = []
 	item.resize(GLOBAL.IT_STACK + 1)
 	item[GLOBAL.IT_ICON] = potion[Data.PO_ICON]
-	item[GLOBAL.IT_NAME] = potion[Data.PO_NAME]
+	# An unknown kind shows its flavor (Identify), the real name comes once it is known
+	item[GLOBAL.IT_NAME] = Identify.displayName("potion", baseIdx)
 	item[GLOBAL.IT_TYPE] = GLOBAL.PO_TYPE
 	item[GLOBAL.IT_STACK] = potion[Data.PO_STACK]
 	item[GLOBAL.IT_BASE] = baseIdx
@@ -317,7 +318,7 @@ func mapScrollToItem(scroll, baseIdx):
 	var item = []
 	item.resize(GLOBAL.IT_STACK + 1)
 	item[GLOBAL.IT_ICON] = Data.SC_ICON_ALL
-	item[GLOBAL.IT_NAME] = scroll[Data.SC_NAME]
+	item[GLOBAL.IT_NAME] = Identify.displayName("scroll", baseIdx)
 	item[GLOBAL.IT_SPEC] = scroll[Data.SC_SP]
 	item[GLOBAL.IT_TYPE] = GLOBAL.SC_TYPE
 	item[GLOBAL.IT_STACK] = scroll[Data.SC_STACK]
@@ -357,6 +358,15 @@ func mapTalismanToItem(talisman):
 	item[GLOBAL.IT_TYPE] = GLOBAL.TA_TYPE
 	return item
 
+# Rations, torches and ammo are lockpick-type items with another base
+func generateSupply(kind: int, count: int):
+	var result = generateLockpicks(count)
+	var item = GLOBAL.items[result[0]]
+	item[GLOBAL.IT_BASE] = kind
+	item[GLOBAL.IT_ICON] = Data.SUP_ICONS[kind]
+	item[GLOBAL.IT_NAME] = Data.SUP_NAMES[kind]
+	return result
+
 func generateLockpicks(count = null):
 	id += 1
 	var item  = []
@@ -364,6 +374,7 @@ func generateLockpicks(count = null):
 	item[GLOBAL.IT_ICON] = Data.LOCKPICK_ICON
 	item[GLOBAL.IT_NAME] = Data.LOCKPICK_NAME
 	item[GLOBAL.IT_TYPE] = GLOBAL.LO_TYPE
+	item[GLOBAL.IT_BASE] = Data.SUP_LOCKPICK
 	if count == null:
 		item[GLOBAL.IT_SPEC] = 1 + (randi() % 3)
 	else:

@@ -12,7 +12,7 @@ position = Vector2( 2, 2 )
 texture = ExtResource( 1 )
 centered = false
 hframes = 6
-vframes = 10
+vframes = 11
 __meta__ = {
 "_editor_description_": ""
 }

@@ -1,0 +1,15 @@
+[remap]
+
+importer="ogg_vorbis"
+type="AudioStreamOGGVorbis"
+path="res://.import/lockpick_fail.ogg-c8b9d1780ee91c12c41a3ad04b2734ee.oggstr"
+
+[deps]
+
+source_file="res://sounds/sfx/lockpick_fail.ogg"
+dest_files=[ "res://.import/lockpick_fail.ogg-c8b9d1780ee91c12c41a3ad04b2734ee.oggstr" ]
+
+[params]
+
+loop=false
+loop_offset=0

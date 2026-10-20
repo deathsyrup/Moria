@@ -1,0 +1,15 @@
+[remap]
+
+importer="ogg_vorbis"
+type="AudioStreamOGGVorbis"
+path="res://.import/monster_hurt.ogg-afd2295e536b08585736d2f6eebe7774.oggstr"
+
+[deps]
+
+source_file="res://sounds/sfx/monster_hurt.ogg"
+dest_files=[ "res://.import/monster_hurt.ogg-afd2295e536b08585736d2f6eebe7774.oggstr" ]
+
+[params]
+
+loop=false
+loop_offset=0

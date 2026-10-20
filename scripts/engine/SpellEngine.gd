@@ -92,6 +92,9 @@ func rollsavingThrow(caster, entity, malus: int = 0) -> bool:
 	return saved
 
 func applyEffect(caster, entity, spellId: int, fromCharacter: bool, rank: int, savingCap: int, direction: Vector2 = Vector2(0, 0)):
+	# Was only recorded for melee hits, so a death by a bite or a spell said "an unknown cause"
+	if caster is Monster and entity is Character:
+		entity.hitBy = caster.stats.entityName
 	if spellId >= 200:
 		abilities.applyEffect(caster, entity, spellId, fromCharacter, rank, savingCap, direction)
 		return
@@ -546,7 +549,8 @@ func flameskin(caster, rank: int):
 	var turns = getTurns(Data.SP_FLAMESKIN, rank)
 	var auraSt = applySpellStatus(caster, Data.STATUS_FIRE_AURA, 0, turns)
 	var targetedCells = getAuraCells(3)
-	Aura.create(targetedCells, Aura.FIRE_AURA, turns+20, true, caster, auraSt)
+	# Was a hard-coded `true`: a monster casting it got an aura that hurt the player's side
+	Aura.create(targetedCells, Aura.FIRE_AURA, turns+20, caster is Character or caster.status == "help", caster, auraSt)
 
 func freedomMovement(caster, rank: int):
 	playEffect(caster.pos, Effect.BUFF, 5, 0.6)
@@ -614,10 +618,11 @@ func poisonCloud(caster, entity, rank: int):
 		if not Ref.currentLevel.canTarget(entity.pos, cell).empty():
 			playEffect(cell, 3, 5)
 			auraCells.append(cell)
+	# Was `caster is Character` only: a cloud cast by an allied monster counted as hostile
 	if rank < 2:
-		Aura.create(auraCells, Aura.POISON_CLOUD_I, turns, caster is Character)
+		Aura.create(auraCells, Aura.POISON_CLOUD_I, turns, caster is Character or caster.status == "help")
 	else:
-		Aura.create(auraCells, Aura.POISON_CLOUD_II, turns, caster is Character)
+		Aura.create(auraCells, Aura.POISON_CLOUD_II, turns, caster is Character or caster.status == "help")
 
 func animatedDead(caster, rank: int):
 	for _i in range(2):
@@ -630,7 +635,8 @@ func spiritGuardians(caster, rank: int):
 	var turns = getTurns(Data.SP_GUADRIAN_SPIRITS, rank)
 	var auraSt = applySpellStatus(caster, Data.STATUS_SPIRIT_GUARD, 0, turns)
 	var targetedCells = getAuraCells(2)
-	Aura.create(targetedCells, Aura.SPIRIT_GUARDIANS, turns, true, caster, auraSt)
+	# Was a hard-coded `true`, see flameskin
+	Aura.create(targetedCells, Aura.SPIRIT_GUARDIANS, turns, caster is Character or caster.status == "help", caster, auraSt)
 
 func fireball(caster, entity):
 	var targetedCells = getArea(entity, 3)

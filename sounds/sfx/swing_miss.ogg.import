@@ -1,0 +1,15 @@
+[remap]
+
+importer="ogg_vorbis"
+type="AudioStreamOGGVorbis"
+path="res://.import/swing_miss.ogg-4dfc04da52bbbe4684a502414d2bbb3b.oggstr"
+
+[deps]
+
+source_file="res://sounds/sfx/swing_miss.ogg"
+dest_files=[ "res://.import/swing_miss.ogg-4dfc04da52bbbe4684a502414d2bbb3b.oggstr" ]
+
+[params]
+
+loop=false
+loop_offset=0

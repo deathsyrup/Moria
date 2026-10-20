@@ -332,6 +332,25 @@ const MO_GOBLIN = 5
 const MO_SPIDER = 6
 const MO_SHAMAN_GOBLIN = 7
 const MO_ZOMBIE = 8
+# More monsters. They reuse the sprites of the originals, tinted (see monsterTints).
+const MO_HOBGOBLIN = 9
+const MO_GOBLIN_ARCHER = 10
+const MO_ORC = 11
+const MO_SKELETON_WARRIOR = 12
+const MO_WIGHT = 13
+const MO_GHOUL = 14
+const MO_GIANT_SPIDER = 15
+const MO_COBRA = 16
+const MO_VAMPIRE_BAT = 17
+const MO_BLOOD_LEECH = 18
+const MO_FIRE_IMP = 19
+const MO_MAGMA_OOZE = 20
+# Champions: the guardian at the end of each area, a hoard drops when one dies
+const MO_CH_BONE_LORD = 30
+const MO_CH_WARCHIEF = 31
+const MO_CH_BROOD_MOTHER = 32
+const MO_CH_PLAGUE_KING = 33
+const MO_CH_MAGMA_LORD = 34
 const MO_BO_TROLL = 500
 const MO_BO_LICH = 501
 const MO_BO_SPIDER_QUEEN = 502
@@ -444,6 +463,137 @@ const monsters = {
 			[SP_ZOMBIE_SCREAM, ACT_ABILITY, ACT_SUBTYPE_ABILITY, ACT_COUNT_UNILIMITED]
 		]
 	],
+	# MORE MONSTERS
+	MO_HOBGOBLIN: [
+		"Hobgoblin", 6, 0, Vector3(1, 3, 0),
+		4, 0, 318, 6, true,
+		1, 0, 0, 6,
+		[]
+	],
+	MO_GOBLIN_ARCHER: [
+		"Goblin archer", 5, 0, Vector3(1, 3, 0),
+		3, 0, 318, 6, true,
+		1, 0, 0, 5,
+		[
+			[0, ACT_THROW, null, 4],
+		]
+	],
+	MO_ORC: [
+		"Orc", 8, 0, Vector3(1, 4, 0),
+		5, 1, 318, 10, true,
+		1, 0, 0, 8,
+		[]
+	],
+	MO_SKELETON_WARRIOR: [
+		"Skeleton warrior", 8, 0, Vector3(1, 4, 0),
+		5, 1, 62, 10, true,
+		1, 0, 0, 7,
+		[]
+	],
+	MO_WIGHT: [
+		"Wight", 10, 0, Vector3(1, 4, 0),
+		5, 2, 62, 16, true,
+		2, 1, 0, 10,
+		[
+			[SP_ZOMBIE_SCREAM, ACT_ABILITY, ACT_SUBTYPE_ABILITY, ACT_COUNT_UNILIMITED]
+		]
+	],
+	MO_GHOUL: [
+		"Ghoul", 9, 0, Vector3(1, 4, 0),
+		4, 1, 285, 12, true,
+		1, 0, 0, 9,
+		[
+			[SP_ZOMBIE_SCREAM, ACT_ABILITY, ACT_SUBTYPE_ABILITY, ACT_COUNT_UNILIMITED]
+		]
+	],
+	MO_GIANT_SPIDER: [
+		"Giant spider", 9, 0, Vector3(1, 4, 0),
+		5, 1, 179, 14, true,
+		1, 0, 0, 10,
+		[
+			[SP_SPIDER_BITE, ACT_ABILITY, ACT_SUBTYPE_ABILITY, ACT_COUNT_UNILIMITED]
+		]
+	],
+	MO_COBRA: [
+		"Cobra", 6, 0, Vector3(1, 3, 0),
+		4, 0, 330, 8, true,
+		1, 0, 0, 6,
+		[
+			[SP_SNAKE_CONSTRICT, ACT_ABILITY, ACT_SUBTYPE_ABILITY, ACT_COUNT_UNILIMITED]
+		]
+	],
+	MO_VAMPIRE_BAT: [
+		"Vampire bat", 5, 0, Vector3(1, 3, 0),
+		4, 0, 157, 9, true,
+		1, 0, 0, 7,
+		[
+			[SP_LEECH_BITE, ACT_ABILITY, ACT_SUBTYPE_ABILITY, ACT_COUNT_UNILIMITED]
+		]
+	],
+	MO_BLOOD_LEECH: [
+		"Blood leech", 7, 0, Vector3(1, 2, 0),
+		3, 0, 158, 9, true,
+		1, 0, 0, 8,
+		[
+			[SP_LEECH_BITE, ACT_ABILITY, ACT_SUBTYPE_ABILITY, ACT_COUNT_UNILIMITED]
+		]
+	],
+	MO_FIRE_IMP: [
+		"Fire imp", 6, 1, Vector3(1, 4, 0),
+		5, 0, 157, 12, true,
+		2, 1, 0, 9,
+		[
+			[SP_FIREBOLT, ACT_SPELL, ACT_SUBTYPE_SPELL, 3],
+		]
+	],
+	MO_MAGMA_OOZE: [
+		"Magma ooze", 10, 0, Vector3(1, 4, 0),
+		3, 1, 158, 14, true,
+		1, 0, 0, 10,
+		[]
+	],
+	# CHAMPIONS
+	MO_CH_BONE_LORD: [
+		"Bone Lord", 30, 2, Vector3(1, 6, 1),
+		6, 2, 62, 150, true,
+		3, 2, 1, 20,
+		[
+			[SP_ZOMBIE_SCREAM, ACT_ABILITY, ACT_SUBTYPE_ABILITY, ACT_COUNT_UNILIMITED],
+			[SP_FIREBOLT, ACT_SPELL, ACT_SUBTYPE_SPELL, 4],
+		]
+	],
+	MO_CH_WARCHIEF: [
+		"Goblin warchief", 28, 2, Vector3(1, 6, 1),
+		6, 2, 318, 150, true,
+		1, 0, 0, 20,
+		[
+			[0, ACT_THROW, null, 6],
+		]
+	],
+	MO_CH_BROOD_MOTHER: [
+		"Brood mother", 28, 2, Vector3(1, 6, 0),
+		5, 2, 179, 150, true,
+		1, 0, 0, 20,
+		[
+			[SP_SPIDER_BITE, ACT_ABILITY, ACT_SUBTYPE_ABILITY, ACT_COUNT_UNILIMITED]
+		]
+	],
+	MO_CH_PLAGUE_KING: [
+		"Plague king", 34, 1, Vector3(1, 6, 0),
+		5, 3, 285, 160, true,
+		2, 1, 0, 22,
+		[
+			[SP_ZOMBIE_SCREAM, ACT_ABILITY, ACT_SUBTYPE_ABILITY, ACT_COUNT_UNILIMITED]
+		]
+	],
+	MO_CH_MAGMA_LORD: [
+		"Magma lord", 36, 2, Vector3(1, 6, 2),
+		5, 3, 158, 170, true,
+		2, 1, 0, 24,
+		[
+			[SP_FIREBOLT, ACT_SPELL, ACT_SUBTYPE_SPELL, 5],
+		]
+	],
 	# BOSSES
 	MO_BO_TROLL: [
 		#Name HP Hit Dmg
@@ -514,6 +664,30 @@ const monsters = {
 		[]
 	],
 }
+
+# Variants share the sprite of the monster they look like, a tint tells them apart (r, g, b)
+const monsterTints = {
+	MO_HOBGOBLIN: Vector3(0.9, 0.7, 0.45),
+	MO_GOBLIN_ARCHER: Vector3(0.6, 0.95, 0.6),
+	MO_ORC: Vector3(0.45, 0.85, 0.5),
+	MO_SKELETON_WARRIOR: Vector3(0.7, 0.8, 1.0),
+	MO_WIGHT: Vector3(0.75, 0.5, 1.0),
+	MO_GHOUL: Vector3(0.6, 1.0, 0.6),
+	MO_GIANT_SPIDER: Vector3(0.85, 0.45, 0.45),
+	MO_COBRA: Vector3(0.95, 0.9, 0.4),
+	MO_VAMPIRE_BAT: Vector3(0.9, 0.35, 0.55),
+	MO_BLOOD_LEECH: Vector3(1.0, 0.4, 0.4),
+	MO_FIRE_IMP: Vector3(1.0, 0.55, 0.2),
+	MO_MAGMA_OOZE: Vector3(1.0, 0.4, 0.15),
+	MO_CH_BONE_LORD: Vector3(0.6, 0.4, 1.0),
+	MO_CH_WARCHIEF: Vector3(1.0, 0.35, 0.35),
+	MO_CH_BROOD_MOTHER: Vector3(0.4, 0.95, 0.4),
+	MO_CH_PLAGUE_KING: Vector3(0.75, 1.0, 0.3),
+	MO_CH_MAGMA_LORD: Vector3(1.0, 0.3, 0.05),
+}
+
+# The guardian waiting on the last floor of an area
+const championTypes = [MO_CH_BONE_LORD, MO_CH_WARCHIEF, MO_CH_BROOD_MOTHER, MO_CH_PLAGUE_KING, MO_CH_MAGMA_LORD]
 
 const TAG_EVIL = 0
 const TAG_UNDEAD = 1
@@ -593,6 +767,9 @@ const CHAR_R_ICE = 17
 const CHAR_R_LIGHTNING = 18
 const CHAR_FATIGUE = 19
 const CHAR_FATIGUEMAX = 20
+const CHAR_FOOD = 21
+const CHAR_LIGHT = 22
+const CHAR_AMMO = 23
 
 # Items general
 var itemByStack = {}
@@ -606,6 +783,7 @@ const W_SHORTSWORD = 4
 const W_AXE = 5
 const W_LONGSWORD = 6
 const W_MORNING = 7
+const W_SLING = 8
 const W_STAFF = 100
 const W_GREATCLUB = 101
 const W_FELLING_AXE = 102
@@ -614,6 +792,7 @@ const W_BROADSWORD = 104
 const W_HALBERD = 105
 const W_GREATAXE = 106
 const W_ZWEIHANDER = 107
+const W_SHORTBOW = 108
 
 const W_NAME = 0
 const W_HIT = 1 #Not used
@@ -642,6 +821,9 @@ const weapons = {
 	W_HALBERD:		["Halberd",		null, Vector2(3, 10), "S", 5, true, 4, 13],
 	W_GREATAXE:		["Greataxe",	null, Vector2(3, 12), "S", 6, true, 4, 14],
 	W_ZWEIHANDER:	["Zweihander",	null, Vector2(4,  8), "S", 7, true, 4, 15],
+	# Ranged weapons: F fires them at a target and uses up one stone or arrow, see Supplies. In melee they only bash.
+	W_SLING:		["Sling",		null, Vector2(1,  6), "B", 1, false, 0, 61],
+	W_SHORTBOW:		["Shortbow",	null, Vector2(1,  8), "P", 3, true, 0, 60],
 }
 
 const weaponDescriptions = {
@@ -662,10 +844,18 @@ const weaponDescriptions = {
 	W_BROADSWORD: "A heavy blade designed to be used two-handed.",
 	W_HALBERD: "",
 	W_GREATAXE: "",
+	W_SLING: "A leather strap that throws stones. F fires it and uses one stone. In melee it only bashes.",
+	W_SHORTBOW: "A bow for hunting. F fires it and uses one arrow. In melee it only bashes.",
 	W_ZWEIHANDER: "",
 }
 
 var weaponsByRarity = {}
+
+func isRanged(weaponBase: int) -> bool:
+	return weaponBase == W_SLING or weaponBase == W_SHORTBOW
+
+func ammoFor(weaponBase: int) -> int:
+	return SUP_STONES if weaponBase == W_SLING else SUP_ARROWS
 
 func weaponsReader():
 	for idx in weapons.keys():
@@ -767,6 +957,13 @@ const PO_INVISIBILITY = 3
 const PO_WOUNDS = 4
 const PO_MIGHT = 5
 const PO_BRILLANCE_1 = 6
+# Harmful and more useful potions (unknown ones are a risk, see Identify)
+const PO_POISON = 7
+const PO_CLUMSINESS = 8
+const PO_DARKNESS = 9
+const PO_REGENERATION = 10
+const PO_INSIGHT = 11
+const PO_FIRE_WARD = 12
 
 const PO_NAME = 0
 const PO_CAN_POP = 1
@@ -782,6 +979,12 @@ const potions = {
 	PO_WOUNDS: 		["Potion of cure wounds", 	true, 2, 28, 4],
 	PO_MIGHT: 		["Potion of might", 		true, 2, 29, 5],
 	PO_BRILLANCE_1: ["Potion of brillance I", 	true, 2, 30, 6],
+	PO_POISON: 		["Potion of poison", 		true, 0, 25, 7],
+	PO_CLUMSINESS: 	["Potion of clumsiness", 	true, 1, 26, 8],
+	PO_DARKNESS: 	["Potion of darkness", 		true, 1, 27, 9],
+	PO_REGENERATION:["Potion of regeneration", 	true, 1, 24, 10],
+	PO_INSIGHT: 	["Potion of insight", 		true, 1, 30, 11],
+	PO_FIRE_WARD: 	["Potion of fire ward", 	true, 2, 29, 12],
 }
 
 const potionDescriptions = {
@@ -792,6 +995,12 @@ const potionDescriptions = {
 	PO_WOUNDS : "Replenishes all you HP and cure a random injury.",
 	PO_MIGHT : "Grants [Might] (double your weapon damages) for 10 turns.",
 	PO_BRILLANCE_1 : "Grants [Brillance I] (level 1 spells costs no uses) for 3 turns.",
+	PO_POISON : "Poisons you for 8 turns. Harmful.",
+	PO_CLUMSINESS : "Grants [Break destiny]: your rolls are at their lowest for 10 turns. Harmful.",
+	PO_DARKNESS : "Blinds you for 8 turns (-1 to hit). Harmful.",
+	PO_REGENERATION : "Restores 1 HP every turn for 20 turns.",
+	PO_INSIGHT : "Reveals every trap you can see for 40 turns.",
+	PO_FIRE_WARD : "Grants [Protect from fire] for 30 turns.",
 }
  
 var potionsByRarity = {}
@@ -821,6 +1030,12 @@ const SC_REVEAL = 3
 const SC_ANIMALS = 4
 const SC_LESSER_ACQ = 5
 const SC_MIRROR_IMAGE = 6
+const SC_FIREBOLT = 7
+const SC_LIGHTNING = 8
+const SC_SLEEP = 9
+const SC_SHIELD = 10
+const SC_SANCTUARY = 11
+const SC_FIND_TRAPS = 12
 
 const scrolls = {
 	SC_MAGIC_MISSILE: 	["Scroll of magic missile", SP_MAGIC_MISSILE, 1, 0, 100],
@@ -830,6 +1045,12 @@ const scrolls = {
 	SC_ANIMALS: 		["Scroll of conjure animals", SP_CONJURE_ANIMAL, 1, 2, 104],
 	SC_LESSER_ACQ: 		["Scroll of lesser acquirement", SP_LESSER_AQUIREMENT, 0, 3, 105],
 	SC_MIRROR_IMAGE: 	["Scroll of mirror images", SP_MIRROR_IMAGES, 1, 3, 106],
+	SC_FIREBOLT: 		["Scroll of fire bolt", SP_FIREBOLT, 1, 1, 107],
+	SC_LIGHTNING: 		["Scroll of lightning bolt", SP_LIGHT_BOLT, 1, 2, 108],
+	SC_SLEEP: 			["Scroll of sleep", SP_SLEEP, 1, 1, 109],
+	SC_SHIELD: 			["Scroll of shield", SP_SHIELD, 1, 0, 110],
+	SC_SANCTUARY: 		["Scroll of sanctuary", SP_SANCTUARY, 1, 2, 111],
+	SC_FIND_TRAPS: 		["Scroll of find traps", SP_REVEAL_TRAPS, 1, 0, 112],
 }
 
 const scrollDescriptions = {
@@ -839,7 +1060,13 @@ const scrollDescriptions = {
 	SC_REVEAL: "All hidden doors appears on your map. Lasts %%TURNS_2.",
 	SC_ANIMALS: "Conjures 1d2+1 wolves to fight by your side. Lasts until rest.",
 	SC_LESSER_ACQ: "Creates a weapon, an armor, a scroll, a potion or golds from nothing.",
-	SC_MIRROR_IMAGE: "Creates 3 illusions of yourself around you to fool your enemies. Every attack or spell has 50 % chances to hit an illusion instead of you. Lasts until rest."
+	SC_MIRROR_IMAGE: "Creates 3 illusions of yourself around you to fool your enemies. Every attack or spell has 50 % chances to hit an illusion instead of you. Lasts until rest.",
+	SC_FIREBOLT: "Fires a bolt of fire at a target, dealing %%DMG_1.",
+	SC_LIGHTNING: "Fires a lightning bolt that hits everything in a line, dealing %%DMG_1.",
+	SC_SLEEP: "Puts a target to sleep.",
+	SC_SHIELD: "Surrounds you with a shield that absorbs damage.",
+	SC_SANCTUARY: "Creatures will not attack you until you attack, throw or cast.",
+	SC_FIND_TRAPS: "Reveals the traps you can see for a while.",
 }
  
 var scrollsByRarity = {}
@@ -932,6 +1159,7 @@ const KIT_FIGHTER = [W_HATCHET, SH_BUCKLER, A_PADDED, [PO_HEALING, PO_HEALING], 
 const KIT_THIEF =	[W_DAGGER, -1, A_PADDED, [PO_HEALING, PO_HEALING], [SC_BLINK], [TH_KNIFE, TH_KNIFE, TH_KNIFE], 45, 3]
 const KIT_MAGE = 	[W_STAFF, -1, A_ROBE, [PO_HEALING, PO_HEALING], [SC_ANIMALS], [], 30, 2]
 const KIT_CLERIC = 	[W_CLUB, SH_BUCKLER, A_ROBE, [PO_HEALING, PO_HEALING], [], [TH_HOLY], 30, 2]
+const KIT_RANGER = [W_SHORTBOW, -1, A_PADDED, [PO_HEALING, PO_HEALING], [], [TH_KNIFE], 30, 2]
 const KIT_PALADIN = [W_GREATCLUB, -1, A_PADDED, [PO_HEALING, PO_HEALING], [], [], 30, 2]
 
 const CLASS_KITS = {
@@ -942,7 +1170,7 @@ const CLASS_KITS = {
 	CL_MAGE: KIT_MAGE,
 	CL_DRUID: KIT_MAGE,
 	CL_CLERIC: KIT_CLERIC,
-	CL_RANGER: KIT_PALADIN,
+	CL_RANGER: KIT_RANGER,
 	CL_PALADIN: KIT_PALADIN,
 }
 
@@ -1069,6 +1297,15 @@ func enchantsReader():
 # Gold
 const GOLD_NAME = "Gold coins"
 const GOLD_ICON = 59
+
+# Supplies share the lockpick item type, the item base tells them apart
+const SUP_LOCKPICK = 0
+const SUP_RATION = 1
+const SUP_TORCH = 2
+const SUP_ARROWS = 3
+const SUP_STONES = 4
+const SUP_NAMES = {SUP_LOCKPICK: "Lockpick", SUP_RATION: "Ration", SUP_TORCH: "Torch", SUP_ARROWS: "Arrow", SUP_STONES: "Sling stone"}
+const SUP_ICONS = {SUP_LOCKPICK: 58, SUP_RATION: 64, SUP_TORCH: 65, SUP_ARROWS: 62, SUP_STONES: 63}
 
 # Lockpick
 const LOCKPICK_NAME = "Lockpick"
@@ -1579,6 +1816,8 @@ const STATUS_PROTECT_FIRE = 121
 const STATUS_PROTECT_POISON = 122
 const STATUS_REPEL_MISSILES = 123
 const STATUS_REGENERATE = 124
+const STATUS_MIGHT = 125
+const STATUS_BRILLIANCE = 126
 
 const STATUS_WILLPOWER = 200
 const STATUS_PHYSICS = 201
@@ -1754,6 +1993,8 @@ const statusPrefabs = {
 	STATUS_PROTECT_POISON: ["Protect from poison", 35, null, null, STATUS_RESIST + DMG_POISON, null, null, false, true, true],
 	STATUS_REPEL_MISSILES: ["Deflect projectiles", 34, null, null, STATUS_REPEL_MISSILES, null, null, false, true, true],
 	STATUS_REGENERATE: ["Regenerate", 34, null, null, STATUS_REGENERATE, null, null, false, true, true],
+	STATUS_MIGHT: ["Might", 16, null, null, STATUS_MIGHT, null, null, false, true, true],
+	STATUS_BRILLIANCE: ["Brillance", 11, null, null, STATUS_BRILLIANCE, null, null, false, true, true],
 	
 	STATUS_TROLL_RAGE: ["Enrage", 34, null, null, STATUS_TROLL_RAGE, null, null, false, true, true],
 }
@@ -1868,9 +2109,23 @@ const TR_DART = 0
 const TR_NAME = 0
 const TR_TYPE = 1
 const TR_ICON = 2
+const TR_TINT = 3
+# All traps use the spike trap sprite, tinted to tell them apart
+const TR_PIT = 1
+const TR_GAS = 2
+const TR_ALARM = 3
+const TR_SNARE = 4
+const TR_FIRE = 5
 const traps = {
-	0: ["Spike trap", TR_DART, 6],
+	TR_DART: ["Spike trap", TR_DART, 6, Vector3(1, 1, 1)],
+	TR_PIT: ["Pit", TR_PIT, 6, Vector3(0.55, 0.6, 1.0)],
+	TR_GAS: ["Poison gas trap", TR_GAS, 6, Vector3(0.5, 1.0, 0.4)],
+	TR_ALARM: ["Alarm trap", TR_ALARM, 6, Vector3(1.0, 0.9, 0.3)],
+	TR_SNARE: ["Snare", TR_SNARE, 6, Vector3(0.85, 0.65, 0.35)],
+	TR_FIRE: ["Fire trap", TR_FIRE, 6, Vector3(1.0, 0.4, 0.2)],
 }
+
+
 
 const BIOME_DUNGEON = 0
 const BIOME_CAVERN = 1
@@ -1880,13 +2135,55 @@ const BIOME_VOLCANO = 4
 const BIOME_ABYSS = 5
 const BIOME_TROLL_BOSS = 10
 
+# How likely each kind is in an area (weights), the placing code picks one with randomTrapType
+const trapWeights = {
+	BIOME_DUNGEON: {TR_DART: 40, TR_PIT: 20, TR_GAS: 15, TR_ALARM: 15, TR_SNARE: 10},
+	BIOME_CAVERN: {TR_DART: 25, TR_PIT: 30, TR_GAS: 25, TR_SNARE: 20},
+	BIOME_MINE: {TR_DART: 30, TR_PIT: 30, TR_GAS: 25, TR_SNARE: 15},
+	BIOME_CRYPT: {TR_DART: 25, TR_GAS: 25, TR_ALARM: 30, TR_SNARE: 20},
+	BIOME_VOLCANO: {TR_DART: 15, TR_FIRE: 45, TR_PIT: 20, TR_SNARE: 20},
+}
+
+static func randomTrapType(biome: int) -> int:
+	var weights = trapWeights.get(biome, trapWeights[BIOME_DUNGEON])
+	var total = 0
+	for w in weights.values():
+		total += w
+	var roll = randi() % total
+	for type in weights.keys():
+		roll -= weights[type]
+		if roll < 0:
+			return type
+	return TR_DART
+
 const BI_CR = 0
 const BI_FLOORS = 1
 const BI_CONNECT = 2
+# [difficulty, floors, what comes next]. Dungeon, Caverns, the troll, then the Crypt, the Mine and the Volcano,
+# and round again one step harder (see WorldHandler.getNextLocation).
 const biomes = {
 	BIOME_DUNGEON: 		[1, 10, [BIOME_CAVERN]],
 	BIOME_CAVERN: 		[2, 10, [BIOME_TROLL_BOSS]],
-	BIOME_TROLL_BOSS:	[2, 1, [BIOME_DUNGEON]]
+	BIOME_TROLL_BOSS:	[2, 1, [BIOME_CRYPT]],
+	BIOME_CRYPT: 		[3, 8, [BIOME_MINE]],
+	BIOME_MINE: 		[4, 8, [BIOME_VOLCANO]],
+	BIOME_VOLCANO: 		[5, 8, [BIOME_DUNGEON]],
+}
+
+# The tint of the floor and wall tiles of an area (r, g, b), the dungeon and the caverns keep their own tiles
+const areaTints = {
+	BIOME_CRYPT: Vector3(0.72, 0.8, 1.0),
+	BIOME_MINE: Vector3(1.0, 0.86, 0.68),
+	BIOME_VOLCANO: Vector3(1.0, 0.62, 0.5),
+}
+
+# Who waits on the last floor of an area
+const areaChampions = {
+	BIOME_DUNGEON: MO_CH_WARCHIEF,
+	BIOME_CAVERN: MO_CH_BROOD_MOTHER,
+	BIOME_CRYPT: MO_CH_BONE_LORD,
+	BIOME_MINE: MO_CH_PLAGUE_KING,
+	BIOME_VOLCANO: MO_CH_MAGMA_LORD,
 }
 
 const ENC_MONSTERS = 0
@@ -1895,6 +2192,7 @@ const ENC_MO_MIN = 1
 const ENC_MO_MAX = 2
 const ENC_IS_LOW = 1
 const ENC_IS_RARE = 2
+# [[[monster, min, max], ...], easy, rare]. A group has between min and max - 1 of a monster.
 const encounters = {
 	BIOME_DUNGEON: [
 		[[[MO_GIANT_BAT, 1, 1]], true, false],
@@ -1907,18 +2205,51 @@ const encounters = {
 		[[[MO_GIANT_LEECH, 2, 4]], false, false],
 		[[[MO_GOBLIN, 1, 1]], false, false],
 		[[[MO_SPIDER, 1, 1]], false, false],
+		[[[MO_HOBGOBLIN, 1, 3]], false, false],
+		[[[MO_GOBLIN_ARCHER, 2, 4]], false, false],
+		[[[MO_SKELETON_WARRIOR, 1, 2]], false, true],
 	],
 	BIOME_CAVERN: [
 		[[[MO_GIANT_BAT, 1, 1]], true, false],
-		[[[MO_GIANT_BAT, 2, 2]], true, true],
 		[[[MO_GIANT_SNAKE, 1, 1]], true, false],
-		[[[MO_LESSER_SKELETON, 1, 1]], true, false],
-		[[[MO_GOBLIN, 1, 1]], true, true],
-		[[[MO_LESSER_SKELETON, 2, 2]], false, false],
-		[[[MO_GIANT_SNAKE, 3, 3]], false, true],
+		[[[MO_SPIDER, 1, 1]], true, true],
+		[[[MO_GIANT_BAT, 2, 4]], false, false],
+		[[[MO_COBRA, 1, 3]], false, false],
 		[[[MO_GIANT_LEECH, 2, 4]], false, false],
-		[[[MO_GOBLIN, 1, 1]], false, false],
-		[[[MO_SPIDER, 1, 1]], false, false],
+		[[[MO_VAMPIRE_BAT, 2, 4]], false, false],
+		[[[MO_BLOOD_LEECH, 2, 4]], false, true],
+		[[[MO_GIANT_SPIDER, 1, 2]], false, false],
+		[[[MO_SPIDER, 2, 4]], false, false],
+		[[[MO_ORC, 1, 2]], false, true],
+	],
+	BIOME_CRYPT: [
+		[[[MO_LESSER_SKELETON, 2, 4]], true, false],
+		[[[MO_SKELETON, 1, 2]], true, false],
+		[[[MO_ZOMBIE, 1, 3]], true, true],
+		[[[MO_SKELETON_WARRIOR, 1, 3]], false, false],
+		[[[MO_GHOUL, 1, 3]], false, false],
+		[[[MO_WIGHT, 1, 2]], false, true],
+		[[[MO_ZOMBIE, 2, 4], [MO_GHOUL, 1, 2]], false, true],
+		[[[MO_LESSER_SKELETON, 3, 5]], false, false],
+	],
+	BIOME_MINE: [
+		[[[MO_GOBLIN, 2, 4]], true, false],
+		[[[MO_HOBGOBLIN, 1, 3]], true, false],
+		[[[MO_GOBLIN_ARCHER, 2, 4]], false, false],
+		[[[MO_ORC, 1, 3]], false, false],
+		[[[MO_HOBGOBLIN, 2, 4], [MO_GOBLIN_ARCHER, 1, 3]], false, true],
+		[[[MO_SPIDER, 1, 3]], false, false],
+		[[[MO_GIANT_SPIDER, 1, 2]], false, true],
+		[[[MO_ORC, 2, 4]], false, true],
+	],
+	BIOME_VOLCANO: [
+		[[[MO_FIRE_IMP, 1, 3]], true, false],
+		[[[MO_VAMPIRE_BAT, 2, 4]], true, false],
+		[[[MO_MAGMA_OOZE, 1, 3]], false, false],
+		[[[MO_BLOOD_LEECH, 2, 4]], false, false],
+		[[[MO_ORC, 1, 3]], false, false],
+		[[[MO_FIRE_IMP, 2, 4], [MO_MAGMA_OOZE, 1, 2]], false, true],
+		[[[MO_ORC, 2, 4], [MO_FIRE_IMP, 1, 2]], false, true],
 	],
 }
 

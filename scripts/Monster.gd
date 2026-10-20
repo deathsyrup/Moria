@@ -28,9 +28,15 @@ func spawn(monsterType: int, cell: Vector2, fromSave: bool = false):
 	type = monsterType
 	isBoss = Data.hasTag(self, Data.TAG_BOSS)
 	bodySprite.frame = Data.monsters[monsterType][Data.MO_SPRITE]
+	if Data.monsterTints.has(monsterType):
+		var tint = Data.monsterTints[monsterType]
+		bodySprite.modulate = Color(tint.x, tint.y, tint.z)
 	setPosition(cell)
 	if not fromSave:
 		stats.init(type)
+		# Difficulty scales the health of monsters spawned from now on
+		stats.hpMax = max(1, int(round(stats.hpMax * Settings.monsterHpFactor())))
+		stats.currentHp = stats.hpMax
 		actions.init(type)
 	if Data.monsterTags.has(monsterType):
 		tags = Data.monsterTags[monsterType]
@@ -59,7 +65,6 @@ func takeTurn():
 		"awake":
 			if has_node("BossAI"):
 				get_node("BossAI").trollHasMoved = false
-				#TODO attack also invocations
 				if get_node("BossAI").execute(Ref.character):
 					return
 			if randf() < 0.25:
@@ -70,12 +75,12 @@ func takeTurn():
 					buffCD = 10
 					return
 			#var rangeToChar = Utils.dist(pos, Ref.character.pos)
-			if ignore(Ref.character):
+			# Was only ever attacking the character, summons were ignored (#TODO)
+			var target = getHostileTarget()
+			if target == null:
 				wander()
 			else:
-				var losToChar = Ref.currentLevel.canTarget(pos, Ref.character.pos)
-				#TODO attack also invocations
-				attack(Ref.character, losToChar)
+				attack(target[0], target[1])
 		"help": # Allies behavior
 			if Utils.dist(Ref.character.pos, pos) > 9:
 				moveTo(Ref.character)
@@ -162,7 +167,8 @@ func isContact(entity, testPos: Vector2 = pos) -> bool:
 func hit(entity):
 	if entity == null:
 		return
-	if entity.is_in_group("Character") or status == "help":
+	# Was `Character or status == "help"`: a hostile monster could not hurt summons
+	if entity.is_in_group("Character") or entity.status == "help" or status == "help":
 		var result = stats.hitDices.roll(self)
 		var targetName = entity.stats.entityName
 		if entity is Character:
@@ -174,6 +180,8 @@ func hit(entity):
 				StatusEngine.decreaseStatusRanks(self, 1, Data.STATUS_MIRROR_IMAGES)
 				Ref.ui.writeCharacterHitImage()
 				return
+			if entity is Character:
+				entity.hitBy = stats.entityName
 			if statuses.has(Data.STATUS_ENCHANT + Data.ENCH_PIERCING):
 				entity.takeHit(rolledDmg, 2)
 			else:
@@ -227,6 +235,7 @@ func takeHit(dmg: int, bypassProt: int = 0):
 	realDmg = StatusEngine.decreaseStatusRanks(self, realDmg, Data.STATUS_SHIELD)
 	stats.currentHp -= realDmg
 	Ref.ui.writeMonsterTakeHit(stats.entityName, realDmg)
+	Fx.hit(self, realDmg)
 	if stats.currentHp <= 0:
 		die()
 	elif StatusEngine.removeStatusType(self, Data.STATUS_SLEEP):
@@ -239,17 +248,31 @@ func heal(amount: int):
 	Ref.ui.writeMonsterHeal(stats.entityName, stats.currentHp - oldHp)
 
 func die():
+	# Killing a summon must not give experience, only killing an enemy does
+	var wasAlly = status == "help"
+	if not wasAlly:
+		Ref.character.kills += 1
+		Progress.add("kills")
 	status = "dead"
 	Ref.ui.writeMonsterDie(stats.entityName)
 	StatusEngine.clearStatuses(self)
-	if not Data.hasTag(type, Data.TAG_SUMMONED):
+	if not wasAlly and not Data.hasTag(type, Data.TAG_SUMMONED):
 		Ref.character.stats.xp += stats.xp
 	if Ref.character.statuses.has(Data.STATUS_ENCHANT + Data.ENCH_LIFE_DRAIN):
 		Ref.character.heal(2)
 	if GLOBAL.monstersByPosition.has(pos):
 		GLOBAL.monstersByPosition.erase(pos)
 	GLOBAL.targets.erase(get_instance_id())
+	if not wasAlly and Data.championTypes.has(type):
+		dropHoard()
 	queue_free()
+
+# A champion leaves three piles of the better loot where it fell
+func dropHoard():
+	Ref.ui.write(Ref.ui.color("The " + stats.entityName + " falls and leaves a hoard behind!", "yellow"))
+	for _i in range(3):
+		Ref.currentLevel.addLoot(pos, true)
+	Sfx.play("discover")
 
 func awake():
 	if status == "sleep":
@@ -271,6 +294,27 @@ func quaffPotion(idx: int, actionType: String):
 	PotionEngine.applyEffect(self, potion[GLOBAL.IT_BASE])
 	actions.consumeAction(idx, actionType)
 	SpellEngine.breakSanctuary(self, SpellEngine.SANCT_ATTACK)
+
+# Closest enemy of this monster in line of sight: the character or one of its summons.
+# Returns [target, los], or null when there is nothing to attack.
+func getHostileTarget():
+	var target = null
+	var los = []
+	if not ignore(Ref.character):
+		target = Ref.character
+		los = Ref.currentLevel.canTarget(pos, Ref.character.pos)
+	for a in Ref.currentLevel.allies.get_children():
+		if a.status == "dead" or ignore(a):
+			continue
+		var allyLos = Ref.currentLevel.canTarget(pos, a.pos)
+		if allyLos.empty():
+			continue
+		if target == null or los.empty() or allyLos.size() < los.size():
+			target = a
+			los = allyLos
+	if target == null:
+		return null
+	return [target, los]
 
 func getClosestTarget(targets):
 	var result = null

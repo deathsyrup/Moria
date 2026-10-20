@@ -28,6 +28,9 @@ onready var dmgLabel = get_node("SideMenu/DmgContainer/Label/Current")
 onready var hitLabel = get_node("SideMenu/HitContainer/Label/Current")
 onready var lockLabel = get_node("SideMenu/LockContainer/Label/Current")
 onready var goldLabel = get_node("SideMenu/GoldContainer/Label/Current")
+onready var foodLabel = get_node("SideMenu/FoodContainer/Label/Current")
+onready var lightLabel = get_node("SideMenu/LightContainer/Label/Current")
+onready var ammoLabel = get_node("SideMenu/AmmoContainer/Label/Current")
 onready var rFire = get_node("SideMenu/rFire/Label/Current")
 onready var rPois = get_node("SideMenu/rPoison/Label/Current")
 onready var statusBar = get_node("StatusBar")
@@ -39,7 +42,13 @@ onready var bossBar = get_node("BossBar")
 var currentChoice = ""
 var currentSuffix = ""
 var currentMax = 0
-var lastPrinted: String = ""
+# Every diary event sets this name, the setter plays the matching sound effect.
+# Inside this script assign it as self.lastPrinted or the setter is skipped
+var lastPrinted: String = "" setget setLastPrinted
+
+func setLastPrinted(value: String):
+	lastPrinted = value
+	Sfx.playEvent(value)
 var previousMode: int = GLOBAL.MODE_NONE
 var diaryContent: String = ""
 
@@ -115,7 +124,7 @@ func write(text, signet: String = ""):
 	diaryContent += text
 	Ref.game.autoexplore = false
 	if not signet.empty():
-		lastPrinted = signet
+		self.lastPrinted = signet
 
 func simpleWrite(text):
 	if text == null:
@@ -132,11 +141,11 @@ func color(text: String, color: String):
 
 func writeOk():
 	write("Ok then.")
-	lastPrinted = "writeOk"
+	self.lastPrinted = "writeOk"
 
 func writeXpGain(xp: int):
 	write("You earn " + color(String(xp), "yellow") + " XP.")
-	lastPrinted = "writeXpGain"
+	self.lastPrinted = "writeXpGain"
 
 func writeLevelUp(level: int, hp: int, skp: int, feat: int):
 	write(color("You reach level " + String(level) + " !", "green"))
@@ -147,218 +156,218 @@ func writeLevelUp(level: int, hp: int, skp: int, feat: int):
 		msg += " and " + String(skp) + " skill points."
 	write(color(msg, "green"))
 	write(color("Press [K] to spend your points.", "green"))
-	lastPrinted = "writeLevelUp"
+	self.lastPrinted = "writeLevelUp"
 	
 
 func writeAssignedKey(key: int, item: String):
 	item[0] = item[0].capitalize()
 	write(item + " assigned to key " + color(String(key), "yellow") + ".")
-	lastPrinted = "writeAssignedKey"
+	self.lastPrinted = "writeAssignedKey"
 
 func writeNoPotionAssigned():
 	write("You don't have any potion assigned.")
-	lastPrinted = "writeNoPotionAssigned"
+	self.lastPrinted = "writeNoPotionAssigned"
 
 func writeWhichPotion(choices: Array):
 	var msg = "Quaff which potion?"
 	msg += listToChoices(choices)
 	write(msg)
-	lastPrinted = "writeWhichPotion"
+	self.lastPrinted = "writeWhichPotion"
 
 func writeNoScrollAssigned():
 	write("You don't have any scroll assigned.")
-	lastPrinted = "writeNoScrollAssigned"
+	self.lastPrinted = "writeNoScrollAssigned"
 
 func writeWhichScroll(choices: Array):
 	var msg = "Read which scroll?"
 	msg += listToChoices(choices)
 	write(msg)
-	lastPrinted = "writeWhichScroll"
+	self.lastPrinted = "writeWhichScroll"
 
 func writeNoThrowingAssigned():
 	write("You don't have any throwing weapon assigned.")
-	lastPrinted = "writeNoThrowingAssigned"
+	self.lastPrinted = "writeNoThrowingAssigned"
 
 func writeWhichThrowing(choices: Array):
 	var msg = "Throw what?"
 	msg += listToChoices(choices)
 	write(msg)
-	lastPrinted = "writeWhichThrowing"
+	self.lastPrinted = "writeWhichThrowing"
 
 func writeNoSpellAssigned():
 	write("You don't have any spell assigned.")
-	lastPrinted = "writeNoSpellAssigned"
+	self.lastPrinted = "writeNoSpellAssigned"
 
 func writeSpellDirection():
 	write("Cast spell in which direction?")
-	lastPrinted = "writeSpellDirection"
+	self.lastPrinted = "writeSpellDirection"
 
 func writeWhichSpell(choices: Array):
 	var msg = "Cast which spell?"
 	msg += listToChoices(choices)
 	write(msg)
-	lastPrinted = "writeWhichSpell"
+	self.lastPrinted = "writeWhichSpell"
 
 func writeCastSpell(spell: String):
 	write("You cast " + color(spell, "yellow") + ".")
-	lastPrinted = "writeCastSpell"
+	self.lastPrinted = "writeCastSpell"
 
 func writeMonsterCastSpell(entityName: String, spell: String):
 	write(entityName + " casts " + color(spell, "yellow") + ".")
-	lastPrinted = "writeMonsterCastSpell"
+	self.lastPrinted = "writeMonsterCastSpell"
 
 func writeNoSpell(spell: String):
 	write("You cannot cast " + spell + " anymore until you rest.")
-	lastPrinted = "writeNoSpell"
+	self.lastPrinted = "writeNoSpell"
 
 func writeCharacterSavingThrowSuccess():
 	write("You succeed your saving throw.")
-	lastPrinted = "writeCharacterSavingThrowSuccess"
+	self.lastPrinted = "writeCharacterSavingThrowSuccess"
 
 func writeSavingThrowSuccess(entityName: String):
 	write(entityName + " succeed its saving throw.")
-	lastPrinted = "writeSavingThrowSuccess"
+	self.lastPrinted = "writeSavingThrowSuccess"
 
 func writeNoGoingBack():
 	write("A shadow force blocks the way. There is no going back...")
-	lastPrinted = "writeNoGoingBack"
+	self.lastPrinted = "writeNoGoingBack"
 
 func askToChangeFloor():
 	write("Do you want to go to the next floor? (Y/n)")
-	lastPrinted = "askToChangeFloor"
+	self.lastPrinted = "askToChangeFloor"
 
 func askToOpenChest():
 	write("Do you want to open the chest? (Y/n)")
-	lastPrinted = "askToOpenChest"
+	self.lastPrinted = "askToOpenChest"
 
 func askToPickChest(dd: int):
 	var msg = "The chest is locked. Do you want to pick the lock? (DC "
 	msg += String(dd) + ") (Y/n)"
 	write(color(msg, "yellow"))
-	lastPrinted = "askToPickChest"
+	self.lastPrinted = "askToPickChest"
 
 func askToPickDoor(dd: int):
 	var msg = "The door is locked. Do you want to pick the lock? (DC "
 	msg += String(dd) + ") (Y/n)"
 	write(color(msg, "yellow"))
-	lastPrinted = "askToPickDoor"
+	self.lastPrinted = "askToPickDoor"
 
 func writeDoorUnlocked():
 	write("The door is unlocked.")
-	lastPrinted = "writeDoorUnlocked"
+	self.lastPrinted = "writeDoorUnlocked"
 
 func writeChestUnlocked():
 	write("The chest is unlocked.")
-	lastPrinted = "writeChestUnlocked"
+	self.lastPrinted = "writeChestUnlocked"
 
 func writeLockpickSuccess(rolled: int):
 	var msg = "You successfully pick the lock ! (rolled "
 	msg +=  String(rolled) + ")"
 	write(color(msg, "green"))
-	lastPrinted = "writeLockpickSuccess"
+	self.lastPrinted = "writeLockpickSuccess"
 
 func writeLockpickFailure(rolled: int):
 	var msg = "You fail your atempt and the lockpick broke ! (rolled "
 	msg +=  String(rolled) + ")"
 	write(color(msg, "red"))
-	lastPrinted = "writeLockpickFailure"
+	self.lastPrinted = "writeLockpickFailure"
 
 func noLockpicksChest():
 	write("The chest is locked and you don't have any lockpicks to pick it.")
-	lastPrinted = "noLockpicksChest"
+	self.lastPrinted = "noLockpicksChest"
 
 func noLockpicksDoor():
 	write("The door is locked and you don't have any lockpicks to pick it.")
-	lastPrinted = "noLockpicksDoor"
+	self.lastPrinted = "noLockpicksDoor"
 
 func writeNoLockedDoor():
 	write("There is no locked door or chest to unlock there.")
-	lastPrinted = "writeNoLockedDoor"
+	self.lastPrinted = "writeNoLockedDoor"
 
 func writeSearch():
 	write("You look for hidden secrets around you...")
-	lastPrinted = "writeSearch"
+	self.lastPrinted = "writeSearch"
 
 func writeHiddenDoorDetected():
 	write(color("You detect a hidden door !", "yellow"))
-	lastPrinted = "writeHiddenDoorDetected"
+	self.lastPrinted = "writeHiddenDoorDetected"
 
 func writeHiddenTrapDetected(name: String):
 	write(color("You detect " + Utils.addArticle(name) + " !", "yellow"))
-	lastPrinted = "writeHiddenTrapDetected"
+	self.lastPrinted = "writeHiddenTrapDetected"
 
 func writeNoLoot():
 	write("Nothing to pick here.")
-	lastPrinted = "writeNoLoot"
+	self.lastPrinted = "writeNoLoot"
 
 func writePickupLoot(item: String, count: int):
 	write("You pick " + Utils.addArticle(item, count) + ".")
-	lastPrinted = "writePickupLoot"
+	self.lastPrinted = "writePickupLoot"
 
 func writeBuyLoot(item: String, count: int, price: int):
 	write(color("You buy " + Utils.addArticle(item, count) + " for " + String(price) + " golds.", "yellow"))
-	lastPrinted = "writeBuyLoot"
+	self.lastPrinted = "writeBuyLoot"
 
 func writeNoMoney():
 	write("You don't have enough golds for that.")
-	lastPrinted = "writeNoMoney"
+	self.lastPrinted = "writeNoMoney"
 
 func writeAskToBuy(price: int):
 	write("Do you want to buy that? (Y/n)")
-	lastPrinted = "writeAskToBuy"
+	self.lastPrinted = "writeAskToBuy"
 
 func writeNoSkp():
 	write("You don't have any remaining skill point.")
-	lastPrinted = "writeNoSkp"
+	self.lastPrinted = "writeNoSkp"
 
 func writeNoMastery():
 	write("You don't have enough mastery to improve that skill.")
-	lastPrinted = "writeNoMastery"
+	self.lastPrinted = "writeNoMastery"
 
 func writeTriggerTrap(name: String):
 	write(color("You trigger " + Utils.addArticle(name) + " !", "yellow"))
-	lastPrinted = "writeTriggerTrap"
+	self.lastPrinted = "writeTriggerTrap"
 
 func writeCharacterStrike(name: String, hit: int, ca: int):
 	var msg = "You strike the " + name
 	msg += " (rolled " + String(hit) + " vs " + String(ca) + ")."
 	write(color(msg, "yellow"))
-	lastPrinted = "writeCharacterStrike"
+	self.lastPrinted = "writeCharacterStrike"
 
 func writeCharacterShoot(name: String, weapon: String):
 	var msg = "You shoot " + Utils.addArticle(weapon)
 	msg += " at the " + name + "."
 	write(color(msg, "yellow"))
-	lastPrinted = "writeCharacterShoot"
+	self.lastPrinted = "writeCharacterShoot"
 
 func writeCharacterMiss(name: String, hit: int, ca: int):
 	var msg = "You miss the " + name
 	msg += " (rolled " + String(hit) + " vs " + String(ca) + ")."
 	write(msg)
-	lastPrinted = "writeCharacterMiss"
+	self.lastPrinted = "writeCharacterMiss"
 
 func writeDeflectCharacter():
 	var msg = "The projectile was deflected by your spell."
 	write(msg)
-	lastPrinted = "writeDeflectCharacter"
+	self.lastPrinted = "writeDeflectCharacter"
 
 func writeCharacterHitImage():
 	write("You destroyed an illusion !")
-	lastPrinted = "writeCharacterHitImage"
+	self.lastPrinted = "writeCharacterHitImage"
 
 func writeCharacterTakeHit(dmg: int):
 	write(color("You suffer " + String(dmg) + " damages.", "red"))
-	lastPrinted = "writeCharacterTakeHit"
+	self.lastPrinted = "writeCharacterTakeHit"
 
 func writeCharacterHeal(dmg: int):
 	write("You regain " + String(dmg) + " HP.")
-	lastPrinted = "writeCharacterHeal"
+	self.lastPrinted = "writeCharacterHeal"
 
 func writeMonsterStrike(name: String, target: String, hit: int, ca: int):
 	var msg = "The " + name + " strikes " + target
 	msg += " (rolled " + String(hit) + " vs " + String(ca) + ")."
 	write(color(msg, "red"))
-	lastPrinted = "writeMonsterStrike"
+	self.lastPrinted = "writeMonsterStrike"
 
 func writeMonsterShoot(name: String, target: String, weapon: String):
 	var msg = "The " + name + " shoots " + Utils.addArticle(weapon)
@@ -368,66 +377,66 @@ func writeMonsterShoot(name: String, target: String, weapon: String):
 		msg += " at your " + target
 	msg += "."
 	write(color(msg, "yellow"))
-	lastPrinted = "writeMonsterShoot"
+	self.lastPrinted = "writeMonsterShoot"
 
 func writeMonsterMiss(name: String, target: String, hit: int, ca: int):
 	var msg = "The " + name + " misses " + target
 	msg += " (rolled " + String(hit) + " vs " + String(ca) + ")."
 	write(msg)
-	lastPrinted = "writeMonsterMiss"
+	self.lastPrinted = "writeMonsterMiss"
 
 func writeDeflectMonster(name: String):
 	var msg = "The projectile was deflected by the " + name + "'s spell."
 	write(msg)
-	lastPrinted = "writeDeflectMonster"
+	self.lastPrinted = "writeDeflectMonster"
 
 func writeMonsterHitImage(name: String):
 	var msg = "The " + name + " destroyed an illusion !"
 	write(msg)
-	lastPrinted = "writeMonsterHitImage"
+	self.lastPrinted = "writeMonsterHitImage"
 
 func writeMonsterTakeHit(name: String, dmg: int):
 	var msg = "The " + name + " suffers " + String(dmg) + " damages."
 	write(color(msg, "yellow"))
-	lastPrinted = "writeMonsterTakeHit"
+	self.lastPrinted = "writeMonsterTakeHit"
 
 func writeMonsterHeal(name: String, dmg: int):
 	write("The " + name + " regain " + String(dmg) + " HP.")
-	lastPrinted = "writeMonsterHeal"
+	self.lastPrinted = "writeMonsterHeal"
 
 func writeMonsterDie(name: String):
 	write(color("The " + name + " dies.", "yellow"))
-	lastPrinted = "writeMonsterDie"
+	self.lastPrinted = "writeMonsterDie"
 
 func writeQuaffedPotion(potion: String):
 	write("You quaff the " + potion + ".")
-	lastPrinted = "writeQuaffedPotion"
+	self.lastPrinted = "writeQuaffedPotion"
 
 func writeMonsterQuaffedPotion(entityName: String, potion: String):
 	write(entityName + " quaffes the " + potion + ".")
-	lastPrinted = "writeMonsterQuaffedPotion"
+	self.lastPrinted = "writeMonsterQuaffedPotion"
 
 func writeRemoveSleep():
 	write("You are woken up by the attack.")
-	lastPrinted = "writeRemoveSleep"
+	self.lastPrinted = "writeRemoveSleep"
 
 func writeMonsterRemoveSleep(entityName: String):
 	write(entityName + " is woken up by the attack.")
-	lastPrinted = "writeMonsterRemoveSleep"
+	self.lastPrinted = "writeMonsterRemoveSleep"
 
 func noTarget():
 	write("There is no targets at range for this.")
-	lastPrinted = "noTarget"
+	self.lastPrinted = "noTarget"
 
 func writeWishChoice():
 	var msg = "Ask for what?"
 	msg += listToChoices(["Weapon", "Armor", "Scrolls", "Potions", "Gold"])
 	write(msg)
-	lastPrinted = "writeWishChoice"
+	self.lastPrinted = "writeWishChoice"
 
 func writeFreeToAct():
 	write("You are free to move again.")
-	lastPrinted = "writeFreeToAct"
+	self.lastPrinted = "writeFreeToAct"
 
 const ST_SLEEP = "sleeping"
 const ST_PARALYSIS = "paralyzed"
@@ -436,15 +445,15 @@ const ST_TERROR = "terrorized"
 func writeCannotAct(status: String):
 	var msg = "You are " + status + ", you cannot act."
 	write(color(msg, "red"))
-	lastPrinted = "writeCannotAct"
+	self.lastPrinted = "writeCannotAct"
 
 func writeCannotMove():
 	write(color("You are immobilized, you cannot move.", "red"))
-	lastPrinted = "writeCannotMove"
+	self.lastPrinted = "writeCannotMove"
 
 func writeSancturayBreak():
 	write("You broke your sanctuary !")
-	lastPrinted = "writeSancturayBreak"
+	self.lastPrinted = "writeSancturayBreak"
 
 func askForRest(rests: int):
 	var msg = "You can rest " + String(rests)
@@ -454,23 +463,23 @@ func askForRest(rests: int):
 		msg += " times."
 	msg += " Do you want to rest here? (Y/n)"
 	write(msg)
-	lastPrinted = "askForRest"
+	self.lastPrinted = "askForRest"
 
 func noMoreRest():
 	write("You cannot rest anymore.")
-	lastPrinted = "noMoreRest"
+	self.lastPrinted = "noMoreRest"
 
 func writeNoSafeRest():
 	write("Some hostile creatures lurk in the shadows. You cannot rest here.")
-	lastPrinted = "writeNoSafeRest"
+	self.lastPrinted = "writeNoSafeRest"
 
 func writeRested():
 	write("You wake up, fully rested.")
-	lastPrinted = "writeRested"
+	self.lastPrinted = "writeRested"
 
 func writeCannotEquipWeapon():
 	write("You don't have enough fighting skill to equip this weapon.")
-	lastPrinted = "writeCannotEquipWeapon"
+	self.lastPrinted = "writeCannotEquipWeapon"
 
 func writeWishResult(items: Array):
 	var msg = ""
@@ -485,7 +494,7 @@ func writeWishResult(items: Array):
 			list.append(Utils.addArticle(item[GLOBAL.IT_NAME], items.size()))
 	msg += Utils.makeList(list) + " appeared at your feet."
 	write(msg)
-	lastPrinted = "writeWishResult"
+	self.lastPrinted = "writeWishResult"
 
 func listToChoices(list: Array) -> String:
 	var msg = ""
@@ -523,6 +532,12 @@ func updateStat(stat: int, value):
 			lockLabel.text = String(value)
 		Data.CHAR_GOLD:
 			goldLabel.text = String(value)
+		Data.CHAR_FOOD:
+			foodLabel.text = String(value)
+		Data.CHAR_LIGHT:
+			lightLabel.text = String(value)
+		Data.CHAR_AMMO:
+			ammoLabel.text = String(value)
 		Data.CHAR_LVL:
 			levelLabel.text = String(value)
 		Data.CHAR_XP:
@@ -549,6 +564,12 @@ func updateLocation(biome: int, currentFloor: int):
 			locationLabel.text += "Dungeon "
 		Data.BIOME_CAVERN:
 			locationLabel.text += "Cavern "
+		Data.BIOME_CRYPT:
+			locationLabel.text += "Crypt "
+		Data.BIOME_MINE:
+			locationLabel.text += "Mine "
+		Data.BIOME_VOLCANO:
+			locationLabel.text += "Volcano "
 		Data.BIOME_TROLL_BOSS:
 			locationLabel.text += "Encounter "
 	locationLabel.text += Utils.toRoman(currentFloor)

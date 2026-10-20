@@ -18,6 +18,8 @@ func init(trapType: int, trapPos: Vector2):
 	trapName = Data.traps[type][Data.TR_NAME]
 	position = pos * 9
 	sprite.frame = Data.traps[type][Data.TR_ICON]
+	var tint = Data.traps[type][Data.TR_TINT]
+	sprite.modulate = Color(tint.x, tint.y, tint.z)
 	sprite.visible = false
 	mask.visible = false
 	GLOBAL.trapsByPos[pos] = get_instance_id()

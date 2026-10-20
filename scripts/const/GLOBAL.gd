@@ -3,6 +3,14 @@ extends Node
 onready var lootScene = preload("res://scenes/Loot.tscn")
 
 var startingMode = null
+# The save chosen with Load game on the title screen
+var loadName = ""
+# The vaults and lairs built on this floor, see SpecialRooms
+var specialRooms: Array = []
+# The potion and scroll kinds this run has identified, see Identify
+var known = {"potion": {}, "scroll": {}}
+# A message the title screen shows once, for example when a save cannot be loaded
+var titleMessage = ""
 
 # Game modes
 const MODE_NONE = 0
@@ -14,12 +22,24 @@ const MODE_NUMBER = 13
 const MODE_INVENTORY = 20
 const MODE_SPELL = 21
 const MODE_CHEST = 30
+const MODE_OPTIONS = 40
+const MODE_HELP = 41
+const MODE_GAMEOVER = 42
+const MODE_LOG = 43
+const MODE_MAP = 44
 
 var currentMode: int = MODE_NONE
 
 # Dungeon
-const FLOOR_SIZE_X = 37
-const FLOOR_SIZE_Y = 19
+# Was 37 x 19, which is exactly what the screen shows. A floor is now 55 x 27 and the camera follows
+# the character through a window of MAP_VIEW_COLS x MAP_VIEW_ROWS cells (see CurrentLevel.centerOn).
+const FLOOR_SIZE_X = 55
+const FLOOR_SIZE_Y = 27
+# Monsters, loot, chests and traps grow with the map (the area is 2.1 times bigger, a bit less content
+# than that, the floors are meant to be more spacious)
+const CONTENT_SCALE = 1.7
+const MAP_VIEW_COLS = 37
+const MAP_VIEW_ROWS = 19
 const FULLNESS_THRESHOLD = 0.44
 const DOOR_REDUCTION_RATIO = 0.65
 const HIDDEN_DOORS_RATIO = 0.16
@@ -114,10 +134,15 @@ func isForSell(cell: Vector2) -> bool:
 	return itemsOnFloor[cell][FLOOR_TO_SELL]
 
 func dropItemOnFloor(idx: int, cell: Vector2, toSell: bool = false, price: int = 1, renewable: bool = false):
+	if toSell:
+		if items[idx][IT_TYPE] == PO_TYPE:
+			Identify.learn("potion", items[idx][IT_BASE])
+		elif items[idx][IT_TYPE] == SC_TYPE:
+			Identify.learn("scroll", items[idx][IT_BASE])
 	if itemsOnFloor.has(cell):
 		if items[idx][IT_TYPE] == LO_TYPE or items[idx][IT_TYPE] == GO_TYPE:
 			for i in itemsOnFloor[cell][0]:
-				if items[i][IT_TYPE] == items[idx][IT_TYPE]:
+				if items[i][IT_TYPE] == items[idx][IT_TYPE] and items[i][IT_BASE] == items[idx][IT_BASE]:
 					items[i][IT_SPEC] += items[idx][IT_SPEC]
 					return
 		itemsOnFloor[cell][FLOOR_IDS].append(idx)

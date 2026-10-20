@@ -97,9 +97,12 @@ func castSpellCharacter(spellId: int, scrollId = null):
 				SpellEngine.breakSanctuary(Ref.character, SpellEngine.SANCT_BUFF)
 	if (spellCasted):
 		if scrollId == null:
-			Ref.character.spells.spellsUses[spellId] -= 1
+			# Brillance makes level 1 spells cost no use
+			if not (Ref.character.statuses.has(Data.STATUS_BRILLIANCE) and Data.spells[spellId][1] == 1):
+				Ref.character.spells.spellsUses[spellId] -= 1
 			Ref.character.shortcuts.refreshShortcuts(spellId)
 		else:
+			Identify.learn("scroll", GLOBAL.items[scrollId][GLOBAL.IT_BASE], true)
 			Ref.character.inventory.scrolls.erase(scrollId)
 			Ref.character.shortcuts.refreshShortcuts(GLOBAL.items[scrollId][GLOBAL.IT_STACK])
 			GLOBAL.items.erase(scrollId)
@@ -126,7 +129,10 @@ func castSpellMonster(spellId: int, caster, target, path: Array):
 		SpellEngine.breakSanctuary(caster, SpellEngine.SANCT_BUFF)
 
 func spellRebound(spellId: int, caster, initial, spellRank: int, savingCap: int, n: int):
-	var targets = [Ref.currentLevel.allies.get_children()]
+	# Was `[allies.get_children()]`: an Array inside the list, so reading .status on it
+	# (and on the Character, which has none) raised a script error whenever a
+	# monster cast a rebounding spell
+	var targets = Ref.currentLevel.allies.get_children()
 	targets.append(Ref.character)
 	if caster is Character:
 		targets = Ref.currentLevel.monsters.get_children()
@@ -136,7 +142,9 @@ func spellRebound(spellId: int, caster, initial, spellRank: int, savingCap: int,
 	for m in targets:
 		if m == initial:
 			continue
-		if m.status == "dead" or m.status == "help":
+		# Was also skipping allies ("help"), so a monster's rebound could never reach the
+		# player's summons. Only the player's side is ever in the list for a monster caster.
+		if m is Monster and m.status == "dead":
 			continue
 		var los = Ref.currentLevel.canTarget(initial.pos, m.pos)
 		if los.empty():

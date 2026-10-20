@@ -23,11 +23,34 @@ onready var spellHandler = get_node("Utils/SpellHandler")
 onready var throwHandler = get_node("Utils/ThrowHandler")
 onready var restHandler = get_node("Utils/RestHandler")
 onready var saveSystem = get_node("Utils/SaveSystem")
+onready var optionsMenu = preload("res://scripts/menu/OptionsMenu.gd").new()
+onready var helpMenu = preload("res://scripts/menu/HelpMenu.gd").new()
+onready var gameOver = preload("res://scripts/menu/GameOverScreen.gd").new()
+onready var historyScreen = preload("res://scripts/menu/TextScreen.gd").new()
+onready var mapOverview = preload("res://scripts/menu/MapOverview.gd").new()
 
 var random_seed: int
 var autoexplore = false setget setAutoExplore
+var traveling = false
+var holdTime = 0.0
+var hoverCell = Vector2(-1, -1)
+# The seed of this run. Every floor is generated from it (see floorSeed), so a seed gives the same dungeon
+var runSeed = 0
+const HISTORY_LINES = 300
+# Where the map is drawn on the 1920 x 1080 screen, clicks outside it belong to the panels
+const MAP_WINDOW = Rect2(Vector2(24, 24), Vector2(1332, 684))
+
+# Hold an arrow key to keep walking: it starts after a short delay, then steps at a steady pace
+const HOLD_DELAY = 0.3
+const HOLD_INTERVAL = 0.1
 
 func _ready():
+	set_physics_process(true)
+	add_child(optionsMenu)
+	add_child(helpMenu)
+	add_child(gameOver)
+	add_child(historyScreen)
+	add_child(mapOverview)
 	if debugMode:
 		Ref.currentLevel.fog.visible = false
 		Ref.currentLevel.shadows.visible = false
@@ -37,9 +60,11 @@ func _ready():
 	if start == 4:
 		get_tree().change_scene("res://scenes/UI/TitleScreen.tscn")
 	randomize()
-	var randomSeed = randi()
-	print("Seed: " + String(randomSeed))
-	seed(randomSeed)
+	runSeed = seedFromArguments()
+	if runSeed == 0:
+		runSeed = randi()
+	print("Seed: " + String(runSeed))
+	seed(runSeed)
 	Ref.game = self
 	set_process_input(false)
 	set_process(false)
@@ -67,11 +92,23 @@ func _ready():
 			startGame()
 		6:
 			dungeonGenerator.analyzer.generateReport()
+		7:
+			# Was after the catch-all branch below, so Load game on the title screen never ran
+			# and started a new fighter instead
+			chooseClassMenu.close()
+			Ref.character.init(Data.CL_FIGHTER)
+			if not saveSystem.loadGame(GLOBAL.loadName):
+				GLOBAL.titleMessage = "That save cannot be loaded (made with smaller maps)."
+				get_tree().change_scene("res://scenes/UI/TitleScreen.tscn")
+				return
+			Ref.currentLevel.centerOn(Ref.character.pos, true)
+			Ref.currentLevel.refresh_view()
+			MasterInput.setMaster(self)
+			GLOBAL.currentMode = GLOBAL.MODE_NORMAL
+			Sfx.playMusicForBiome(WorldHandler.currentBiome)
 		_:
 			Ref.character.init(Data.CL_FIGHTER)
 			startGame()
-		7:
-			saveSystem.loadGame(Ref.character.stats.charName)
 
 func _process(delta):
 	if autoexplore:
@@ -165,6 +202,7 @@ func startGame():
 			WorldHandler.setLocation(1, Data.BIOME_DUNGEON)
 #			WorldHandler.setLocation(1, Data.BIOME_TROLL_BOSS)
 			WorldHandler.currentCR = 2
+			Progress.applyToNewCharacter()
 			newFloor()
 	Ref.currentLevel.refresh_view()
 	MasterInput.setMaster(self)
@@ -174,9 +212,89 @@ func startGame():
 
 func nextFloor():
 	if !WorldHandler.getNextLocation():
-		#TODO add a final screen
-		pass
+		# Was an empty #TODO that went on to generate the same floor again
+		victory()
+		return
+	Sfx.play("descend")
+	# Fade to black, build the next floor while it is black, then fade in (see Fx.arrive)
+	var fading = Fx.fadeOut()
+	if fading is GDScriptFunctionState:
+		yield(fading, "completed")
 	newFloor()
+	autosave()
+
+# Saved after every new floor, so closing the game never costs more than the current floor
+# Was uncapped: a cavern floor could get 31 traps on about 300 cells. Now 5 on the first floors, one more
+# every three floors, the surplus is removed at random.
+# The last floor of an area has a guardian, asleep and far from where you arrive
+func spawnChampion(spawnPos: Vector2):
+	var biome = WorldHandler.currentBiome
+	if not Data.areaChampions.has(biome) or WorldHandler.currentFloor != Data.biomes[biome][Data.BI_FLOORS]:
+		return
+	var cell = Ref.currentLevel.getRandomFreeCell()
+	for _i in range(120):
+		cell = Ref.currentLevel.getRandomFreeCell()
+		if Utils.dist(cell, spawnPos) >= 18:
+			break
+	Ref.currentLevel.spawnMonster(Data.areaChampions[biome], cell)
+	Tips.show("champion", "A guardian waits on the last floor of every area. It is much tougher than anything before it, and it leaves a hoard.")
+
+func trapCap() -> int:
+	return int((5 + int(WorldHandler.currentFloor / 3)) * GLOBAL.CONTENT_SCALE)
+
+func capTraps():
+	var cap = trapCap()
+	var traps = Ref.currentLevel.traps.get_children()
+	traps.shuffle()
+	while traps.size() > cap:
+		var trap = traps.pop_back()
+		GLOBAL.trapsByPos.erase(trap.pos)
+		Ref.currentLevel.get_node("Debug/Traps").set_cellv(trap.pos, -1)
+		trap.free()
+
+func autosave():
+	# Was announcing "Game saved." even when nothing was written (tests, bots)
+	if not Settings.canWrite():
+		return
+	saveSystem.saveGame()
+	Ref.ui.write("Game saved.")
+
+# Walk to a clicked cell that is in view. It stops when an enemy comes into view, when
+# something blocks the way or when any key is pressed.
+func travelTo(cell: Vector2):
+	if traveling or Ref.currentLevel.fog.get_cellv(cell) != 0:
+		return
+	if not GLOBAL.targets.empty():
+		Ref.ui.write("You cannot walk there with enemies in sight.")
+		return
+	var path = pathfinder.a_star(Ref.character.pos, [cell], 60, true)
+	if path == null or path.size() < 2:
+		return
+	traveling = true
+	for i in range(1, path.size()):
+		if not traveling or GLOBAL.currentMode != GLOBAL.MODE_NORMAL or not GLOBAL.targets.empty():
+			break
+		var step = path[i]
+		var direction = step - Ref.character.pos
+		if abs(direction.x) + abs(direction.y) != 1:
+			break
+		var hp = Ref.character.stats.hp
+		Ref.character.moveAsync(direction)
+		yield(get_tree().create_timer(0.07), "timeout")
+		if Ref.character.pos != step and Ref.currentLevel.isCellFree(step)[0]:
+			# A door was opened by the first try, walk through it
+			Ref.character.moveAsync(direction)
+			yield(get_tree().create_timer(0.07), "timeout")
+		if Ref.character.pos != step or Ref.character.stats.hp < hp:
+			break
+	traveling = false
+
+func victory():
+	Ref.ui.write(Ref.ui.color("You have reached the end of the dungeon. You win!", "yellow"))
+	set_process_input(false)
+	Ref.ui.askForContinue(self)
+	yield(Ref.ui, "coroutine_signal")
+	get_tree().change_scene("res://scenes/UI/TitleScreen.tscn")
 
 func cleanFloor():
 	#DEBUG
@@ -197,6 +315,11 @@ func cleanFloor():
 	for m in Ref.currentLevel.monsters.get_children():
 		GLOBAL.monstersByPosition.erase(m.pos)
 		m.free()
+	# Was: never cleared, so a poison cloud kept hurting on the next floor.
+	# Auras tied to a caster (relativeTo) follow the character and stay.
+	for a in Ref.currentLevel.auras.get_children():
+		if a.relativeTo == null:
+			a.free()
 	for n in Ref.currentLevel.npcs.get_children():
 		n.free()
 	for c in Ref.currentLevel.chests.get_children():
@@ -214,6 +337,11 @@ func cleanFloor():
 func testFloor():
 	Ref.currentLevel.levelBuffer.flush()
 	cleanFloor()
+	# Was: allies survived testFloor() (they follow the character between floors),
+	# so a test inherited the allies of the previous one
+	for a in Ref.currentLevel.allies.get_children():
+		GLOBAL.monstersByPosition.erase(a.pos)
+		a.free()
 	dungeonGenerator.simpleFloor()
 	Ref.currentLevel.initShadows()
 	Ref.currentLevel.initSecrets()
@@ -230,34 +358,166 @@ func merchantFloor():
 		Ref.currentLevel.placeCharacter(spawnPos)
 		Ref.currentLevel.levelBuffer.currentLevel = "merchant"
 
+# Every floor holds some food and torches, and now and then ammo. Without them the dungeon starves you.
+func placeSupplies():
+	var wanted = [[Data.SUP_RATION, 1], [Data.SUP_TORCH, 1]]
+	if randf() < 0.5:
+		wanted.append([Data.SUP_RATION, 1])
+	if randf() < 0.5:
+		wanted.append([Data.SUP_ARROWS, 4 + randi() % 8])
+	if randf() < 0.5:
+		wanted.append([Data.SUP_STONES, 5 + randi() % 8])
+	for w in wanted:
+		var cell = Ref.currentLevel.getRandomFreeCell()
+		for id in itemGenerator.generateSupply(w[0], w[1]):
+			GLOBAL.dropItemOnFloor(id, cell)
+
 func newFloor():
+	seed(floorSeed())
+	# The encounter balance (diffCR) used to carry over from the floor before, which changed how many random
+	# numbers a floor used and so the floor itself. A floor now depends on its seed alone.
+	WorldHandler.diffCR = 0.0
 	Ref.currentLevel.levelBuffer.flush()
 	cleanFloor()
 	Ref.currentLevel.initShadows()
 	var spawnPos: Vector2
 	match WorldHandler.currentBiome:
-		Data.BIOME_DUNGEON:
+		Data.BIOME_DUNGEON, Data.BIOME_CRYPT:
 			spawnPos = dungeonGenerator.dungeonFloor()
-		Data.BIOME_CAVERN:
+		Data.BIOME_CAVERN, Data.BIOME_MINE, Data.BIOME_VOLCANO:
 			spawnPos = dungeonGenerator.cavernFloor()
 		_:
 			spawnPos = dungeonGenerator.newFloor()
+	var tint = Data.areaTints.get(WorldHandler.currentBiome, Vector3(1, 1, 1))
+	Ref.currentLevel.dungeon.modulate = Color(tint.x, tint.y, tint.z)
+	SpecialRooms.generate()
+	spawnChampion(spawnPos)
+	capTraps()
 	Ref.currentLevel.initSecrets()
 	Ref.character.spawnPos = spawnPos
 	Ref.currentLevel.placeCharacter(spawnPos)
+	Ref.currentLevel.centerOn(spawnPos, true)
 	for a in Ref.currentLevel.allies.get_children():
 		var cell = Ref.character.getRandomCloseCell()
 		if cell == null:
 			a.die()
+			# Was missing: the dead ally went on to setPosition(null)
+			continue
 		a.setPosition(cell)
 #	for i in range(9):
 #		Ref.currentLevel.spawnMonster(i)
-	for _i in range(max(0, randi() % 6 - 2)):
+	for _i in range(int(round(max(0, randi() % 6 - 2) * GLOBAL.CONTENT_SCALE))):
 		Ref.currentLevel.createChest()
-	for _i in range(3 + (randi() % 4)):
+	for _i in range(int(round((3 + (randi() % 4)) * GLOBAL.CONTENT_SCALE))):
 		Ref.currentLevel.dropItem()
+	placeSupplies()
+	Sfx.playMusicForBiome(WorldHandler.currentBiome)
+	# The floor is built from the seed, everything after it (fights, loot rolls) is random again
+	randomize()
+	Progress.best("best_floor", WorldHandler.currentFloor)
+	if WorldHandler.currentFloor == 1 and WorldHandler.currentBiome == Data.BIOME_DUNGEON:
+		Tips.show("start", "Press H for the controls and Tab for the map. S searches for secret doors, O explores for you.")
+	Fx.arrive(WorldHandler.currentBiome, WorldHandler.currentFloor, Ref.character.floorSummary())
+	Ref.character.startFloorStats()
+
+# Was: key repeat was ignored (is_action_pressed skips echo events), so holding an arrow key moved
+# exactly one step and a corridor meant tapping once per cell
+# Closing the window keeps the run. Was losing everything since the last stairs.
+func _notification(what):
+	if what == NOTIFICATION_WM_QUIT_REQUEST and canSaveOnQuit():
+		saveSystem.saveGame()
+
+# --seed=12345 starts a run from that seed, --seed=daily from one that is the same for everybody that day
+func seedFromArguments() -> int:
+	for argument in OS.get_cmdline_args():
+		if argument.begins_with("--seed="):
+			var value = argument.substr(7)
+			if value == "daily":
+				var d = OS.get_datetime()
+				return ("%04d-%02d-%02d" % [d["year"], d["month"], d["day"]]).hash()
+			return int(value)
+	return 0
+
+# Each floor has its own seed, so the layout, monsters and loot of a floor do not depend on what the
+# player did on the floors before. Fights and the rest of the game stay random.
+func floorSeed() -> int:
+	return runSeed + 7919 * (WorldHandler.currentBiome * 100 + WorldHandler.currentFloor)
+
+# A tooltip for what the mouse points at (monster, loot, chest, door...)
+func updateHover():
+	var mouse = get_viewport().get_mouse_position()
+	if GLOBAL.currentMode != GLOBAL.MODE_NORMAL or Fx.transitioning or not MAP_WINDOW.has_point(mouse):
+		Fx.hideTip()
+		hoverCell = Vector2(-1, -1)
+		return
+	var cell = Ref.currentLevel.dungeon.world_to_map(Ref.currentLevel.dungeon.get_local_mouse_position())
+	hoverCell = cell
+	Fx.showTip(CellInfo.describe(cell), mouse)
+
+func openHistory():
+	var lines = Array(Ref.ui.diaryContent.split("\n"))
+	var tail = lines.slice(max(0, lines.size() - HISTORY_LINES), lines.size() - 1)
+	var text = "\n".join(PoolStringArray(tail))
+	GLOBAL.currentMode = GLOBAL.MODE_LOG
+	historyScreen.connect("closed", self, "onHistoryClosed", [], CONNECT_ONESHOT)
+	historyScreen.open(text, self, true)
+
+func onHistoryClosed():
+	GLOBAL.currentMode = GLOBAL.MODE_NORMAL
+
+# Was always on: / (and so ? and Shift+/, the key matching ignores Shift) skipped to the next floor.
+# The cheat is still there for development: the debugMode export, or MORIA_DEBUG=1 in the environment.
+func debugKeys() -> bool:
+	return debugMode or OS.has_environment("MORIA_DEBUG")
+
+func canSaveOnQuit() -> bool:
+	if start == 2 or Ref.character == null or not is_instance_valid(Ref.character):
+		return false
+	return Ref.character.stats.hp > 0 and Ref.character.charClass >= 0 and GLOBAL.currentMode != GLOBAL.MODE_GAMEOVER
+
+func _physics_process(delta):
+	if GLOBAL.currentMode != GLOBAL.MODE_NORMAL or traveling or autoexplore or Ref.character == null or Fx.transitioning:
+		holdTime = 0.0
+		return
+	var direction = heldDirection()
+	if direction == Vector2.ZERO:
+		holdTime = 0.0
+		return
+	holdTime += delta
+	if holdTime < HOLD_DELAY:
+		return
+	holdTime = HOLD_DELAY - HOLD_INTERVAL
+	# Only walk on through empty cells with no enemy in view. A wall, a door, a monster or an item
+	# you would walk onto stops it, tap the key for those.
+	if not GLOBAL.targets.empty() or not Ref.currentLevel.isCellFree(Ref.character.pos + direction)[0]:
+		return
+	Ref.character.moveAsync(direction)
+
+func heldDirection() -> Vector2:
+	if Input.is_action_pressed("ui_up"):
+		return Vector2(0, -1)
+	if Input.is_action_pressed("ui_down"):
+		return Vector2(0, 1)
+	if Input.is_action_pressed("ui_left"):
+		return Vector2(-1, 0)
+	if Input.is_action_pressed("ui_right"):
+		return Vector2(1, 0)
+	return Vector2.ZERO
 
 func _input(event):
+	# No moves while the screen fades between floors
+	if Fx.transitioning and event.is_pressed():
+		get_tree().set_input_as_handled()
+		return
+	if event.is_pressed():
+		traveling = false
+	if event is InputEventMouseMotion:
+		updateHover()
+		return
+	if event is InputEventMouseButton and event.pressed and event.button_index == BUTTON_LEFT:
+		if GLOBAL.currentMode == GLOBAL.MODE_NORMAL and MAP_WINDOW.has_point(get_viewport().get_mouse_position()):
+			travelTo(Ref.currentLevel.dungeon.world_to_map(Ref.currentLevel.dungeon.get_local_mouse_position()))
+		return
 	if event.is_pressed() and autoexplore:
 		setAutoExplore(false)
 	elif (event.is_action_pressed("autoexplore")):
@@ -296,12 +556,22 @@ func _input(event):
 		pickupLootHandler.pickupLootAsync()
 	elif (event.is_action_released("search")):
 		Ref.character.search()
+	elif event.is_action_released("fire"):
+		Ref.character.fire()
 	elif event.is_action_released("rest"):
 		restHandler.askrForRest()
-	elif (event.is_action_released("debug_new_floor")):
+	elif event.is_action_released("debug_new_floor") and debugKeys():
 		print("====================")
 #		Ref.character.setPosition(dungeonGenerator.newFloor())
 		nextFloor()
+	elif event.is_action_released("ui_cancel") and GLOBAL.currentMode == GLOBAL.MODE_NORMAL:
+		optionsMenu.open()
+	elif event.is_action_released("help"):
+		helpMenu.open()
+	elif event.is_action_released("history"):
+		openHistory()
+	elif event.is_action_released("overview"):
+		mapOverview.open()
 	elif (event.is_action_released("save")):
 		saveSystem.saveGame()
 	elif (event.is_action_released("load")):

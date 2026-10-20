@@ -20,7 +20,9 @@ func createEncounters() -> float:
 #	print("Start")
 	exclusions = []
 	var encounterPool = Data.encounters[WorldHandler.currentBiome]
-	var nb = 3 + (randi() % 4)
+	# Was a flat 3 to 6 groups on every floor, so floor 10 had barely more monsters than floor 1.
+	# One more group every three floors, up to three more.
+	var nb = int(round((3 + (randi() % 4) + min(3, int(WorldHandler.currentFloor / 3))) * GLOBAL.CONTENT_SCALE))
 	for _i in range(nb):
 		var encounter = chooseEncounter(encounterPool)
 #		print("Choose encounter: " + String(encounterPool.find(encounter)))
@@ -39,13 +41,15 @@ func createEncounters() -> float:
 				var nearCell = getNearFreeCell(cell)
 				if nearCell != null:
 					monsters.append(Ref.currentLevel.spawnMonster(m[Data.ENC_MO_TYPE], nearCell))
-					encounterCR += CRmult * Data.monsters[Data.ENC_MO_TYPE][Data.MO_CR]
+					# Was Data.monsters[Data.ENC_MO_TYPE], key 0 (the skeleton): every group counted as a skeleton
+					encounterCR += CRmult * Data.monsters[m[Data.ENC_MO_TYPE]][Data.MO_CR]
 					CRmult *= 0.75
 			for monster in monsters:
 				var allies = monsters.duplicate()
 				allies.erase(monster)
 				monster.allies = allies
-			WorldHandler.diffCR += (encounterCR - (WorldHandler.getLevelNormalCR()/float(nb)))
+			# The budget grows with the number of groups (CONTENT_SCALE), so each group keeps its share
+			WorldHandler.diffCR += (encounterCR - (WorldHandler.getLevelNormalCR() * GLOBAL.CONTENT_SCALE / float(nb)))
 			totalCR += encounterCR
 		for i in range(-3, 4):
 			for j in range(-3, 4):
@@ -83,8 +87,17 @@ func chooseEncounter(encounterPool: Array) -> Array:
 func getNearFreeCell(cell: Vector2):
 	for _i in range(15):
 		var n = Utils.chooseRandom(neighbours)
-		if get_parent().enemyCells.has(cell + n):
-			if not exclusions.has(cell + n):
-				#TODO exclude if cannot see
-				return cell + n
+		var near = cell + n
+		if not get_parent().enemyCells.has(near):
+			continue
+		if exclusions.has(near):
+			continue
+		# Was never checking the cell was free: two monsters of a group could be
+		# spawned on the same cell
+		if GLOBAL.monstersByPosition.has(near):
+			continue
+		# Was #TODO: group members spawned behind walls, away from their group
+		if n != Vector2(0, 0) and Ref.currentLevel.canTarget(cell, near).empty():
+			continue
+		return near
 	return null

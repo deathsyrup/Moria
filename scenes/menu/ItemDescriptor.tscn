@@ -51,7 +51,7 @@ position = Vector2( 1, 2 )
 texture = ExtResource( 2 )
 centered = false
 hframes = 6
-vframes = 10
+vframes = 11
 frame = 15
 
 [node name="Frame" type="ColorRect" parent="Icon"]

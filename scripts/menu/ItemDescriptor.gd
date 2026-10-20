@@ -102,8 +102,9 @@ func weaponDescription(item):
 	effectsLabel.text = enchantsList(item)
 
 func shieldDescription(item):
-	#TODO
-	pass
+	# Was an empty #TODO stub. Shields show AC and Prot like armor (fillDescription
+	# already routes them to armorDescription, this keeps both paths identical)
+	armorDescription(item)
 
 func armorDescription(item):
 	icon.frame = item[GLOBAL.IT_ICON]
@@ -128,6 +129,10 @@ func scrollDescription(item):
 	icon.visible = true
 	nameLabel.text = item[GLOBAL.IT_NAME]
 	var scroll = Data.scrolls[item[GLOBAL.IT_BASE]]
+	if not Identify.isKnown("scroll", item[GLOBAL.IT_BASE]):
+		infoLabel.text = "A scroll you cannot read yet."
+		effectsLabel.text = "Reading it casts a spell and teaches you what it was."
+		return
 	var spell = Data.spells[scroll[Data.SC_SP]]
 	infoLabel.text = "Casts "
 	infoLabel.text += spell[Data.SP_NAME]
@@ -151,6 +156,9 @@ func potionDescription(item):
 	icon.visible = true
 	nameLabel.text = item[GLOBAL.IT_NAME]
 	infoLabel.text = ""
+	if not Identify.isKnown("potion", item[GLOBAL.IT_BASE]):
+		effectsLabel.text = "You do not know what this does. Try it when you are safe, or ask a merchant."
+		return
 	effectsLabel.text = Data.potionDescriptions[item[GLOBAL.IT_BASE]]
 
 func throwingDescription(item):

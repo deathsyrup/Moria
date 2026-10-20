@@ -1,0 +1,15 @@
+[remap]
+
+importer="ogg_vorbis"
+type="AudioStreamOGGVorbis"
+path="res://.import/low_hp.ogg-e4dcf1f6ec3a2cfc12dd19eacb4f7b3d.oggstr"
+
+[deps]
+
+source_file="res://sounds/sfx/low_hp.ogg"
+dest_files=[ "res://.import/low_hp.ogg-e4dcf1f6ec3a2cfc12dd19eacb4f7b3d.oggstr" ]
+
+[params]
+
+loop=false
+loop_offset=0

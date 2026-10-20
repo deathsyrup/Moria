@@ -94,6 +94,7 @@ func newTurn():
 	for m in Ref.currentLevel.allies.get_children():
 		StatusEngine.decreaseStatusesTime(m)
 	StatusEngine.decreaseStatusesTime(Ref.character)
+	Supplies.tick()
 	Ref.currentLevel.refresh_view()
 	Aura.updateAll()
 	Ref.ui.monsterPanelList.fillList()

@@ -6,14 +6,19 @@ onready var chestScene = preload("res://scenes/Chest.tscn")
 onready var trapScene = preload("res://scenes/Trap.tscn")
 onready var npcScene = preload("res://scenes/Npc.tscn")
 
-var filePath = "res://usr/"
+# Was "res://usr/": the res:// folder is read-only in an exported game, so saving only worked
+# when running from the editor. Saves now go to the user data folder.
+var filePath = "user://saves/"
+var oldFilePath = "res://usr/"
 
 func createFolder():
 	var directory = Directory.new()
 	if not directory.dir_exists(filePath):
-		directory.make_dir(filePath)
+		directory.make_dir_recursive(filePath)
 
 func saveGame():
+	if not Settings.canWrite():
+		return
 	createFolder()
 	var file = File.new()
 	file.open(filePath + Ref.character.stats.charName + ".sav", File.WRITE)
@@ -34,15 +39,46 @@ func saveGame():
 	file.store_var(saveUI(), true)
 	file.close()
 
-func loadGame(charName: String):
+# Maps were 37 x 19 before the floors got bigger, saves without a size are from then
+const LEGACY_SIZE = Vector2(37, 19)
+
+func isCompatible(path: String) -> bool:
+	var file = File.new()
+	if file.open(path, File.READ) != OK:
+		return false
+	for _i in range(5):
+		file.get_var(true)
+	var map = file.get_var(true)
+	file.close()
+	return sizeOf(map) == Vector2(GLOBAL.FLOOR_SIZE_X, GLOBAL.FLOOR_SIZE_Y)
+
+func sizeOf(map) -> Vector2:
+	if map is Dictionary and map.has("size"):
+		return map["size"]
+	return LEGACY_SIZE
+
+# Returns false when there is nothing to load or the save is from a version with smaller maps
+func loadGame(charName: String) -> bool:
+	var checkFile = File.new()
+	var checkPath = filePath + charName + ".sav"
+	if not checkFile.file_exists(checkPath):
+		checkPath = oldFilePath + charName + ".sav"
+	if checkFile.file_exists(checkPath) and not isCompatible(checkPath):
+		Ref.ui.write("This save was made with smaller maps and cannot be loaded.")
+		return false
 	Ref.game.cleanFloor()
 	for a in Ref.currentLevel.allies.get_children():
 		GLOBAL.monstersByPosition.erase(a.pos)
 		a.free()
 	var file = File.new()
-	if not file.file_exists(filePath + charName + ".sav"):
-		return
-	file.open(filePath + Ref.character.stats.charName + ".sav", File.READ)
+	var path = filePath + charName + ".sav"
+	if not file.file_exists(path):
+		# Saves made by older versions were written next to the project
+		path = oldFilePath + charName + ".sav"
+		if not file.file_exists(path):
+			return false
+	# Was reading Ref.character.stats.charName and ignoring the charName argument
+	file.open(path, File.READ)
 	loadItemGenerator(file.get_var(true))
 	loadStatusEngine(file.get_var(true))
 	loadItems(file.get_var(true))
@@ -58,6 +94,7 @@ func loadGame(charName: String):
 	loadEngine(file.get_var(true))
 	loadUI(file.get_var(true))
 	file.close()
+	return true
 
 func saveItemGenerator() -> Dictionary:
 	return {
@@ -85,6 +122,9 @@ func saveMap() -> Dictionary:
 		"shadows": tileMapToArray(Ref.currentLevel.shadows),
 		"under": tileMapToArray(Ref.currentLevel.underShadows),
 		"searched": Ref.currentLevel.searched,
+		# Saves hold the map as arrays of the floor size, so they can only be loaded at the same size
+		"size": Vector2(GLOBAL.FLOOR_SIZE_X, GLOBAL.FLOOR_SIZE_Y),
+		"seed": Ref.game.runSeed,
 		"currentBiome": WorldHandler.currentBiome,
 		"currentFloor": WorldHandler.currentFloor,
 	}
@@ -96,6 +136,7 @@ func loadMap(dict: Dictionary):
 	arrayToTilemap(dict["shadows"], Ref.currentLevel.shadows, false)
 	arrayToTilemap(dict["under"], Ref.currentLevel.underShadows, false)
 	Ref.currentLevel.searched = dict["searched"]
+	Ref.game.runSeed = dict.get("seed", Ref.game.runSeed)
 	WorldHandler.currentBiome = dict["currentBiome"]
 	WorldHandler.currentFloor = dict["currentFloor"]
 
@@ -111,13 +152,20 @@ func saveCharacter() -> Dictionary:
 			"currentArmor": Ref.character.inventory.currentArmor,
 			"currentTalismans": Ref.character.inventory.currentTalismans,
 			"weapons": Ref.character.inventory.weapons,
-			"armors": Ref.character.inventory.rests,
+			# Was saving the rests count here, so the armor in the bag was lost on every save
+			"armors": Ref.character.inventory.armors,
 			"potions": Ref.character.inventory.potions,
 			"scrolls": Ref.character.inventory.scrolls,
 			"throwings": Ref.character.inventory.throwings,
 			"talismans": Ref.character.inventory.talismans,
 			"lockpicks": Ref.character.inventory.lockpicks,
 			"golds": Ref.character.inventory.golds,
+			"food": Ref.character.inventory.food,
+			"light": Ref.character.inventory.light,
+			"rations": Ref.character.inventory.rations,
+			"torches": Ref.character.inventory.torches,
+			"arrows": Ref.character.inventory.arrows,
+			"stones": Ref.character.inventory.stones,
 		},
 		"stats": {
 			"name": Ref.character.stats.charName,
@@ -154,13 +202,24 @@ func loadCharacter(dict: Dictionary):
 	Ref.character.inventory.currentArmor = dict["inventory"]["currentArmor"]
 	Ref.character.inventory.currentTalismans = dict["inventory"]["currentTalismans"]
 	Ref.character.inventory.weapons = dict["inventory"]["weapons"]
-	Ref.character.inventory.rests = dict["inventory"]["armors"]
+	# Was assigning the armors entry to rests, the armor list itself was never loaded
+	# Saves made before the fix above hold the rest count (a number) here, keep the bag empty then
+	var savedArmors = dict["inventory"]["armors"]
+	Ref.character.inventory.armors = savedArmors if savedArmors is Array else []
 	Ref.character.inventory.potions = dict["inventory"]["potions"]
 	Ref.character.inventory.scrolls = dict["inventory"]["scrolls"]
 	Ref.character.inventory.throwings = dict["inventory"]["throwings"]
 	Ref.character.inventory.talismans = dict["inventory"]["talismans"]
 	Ref.character.inventory.lockpicks = dict["inventory"]["lockpicks"]
 	Ref.character.inventory.golds = dict["inventory"]["golds"]
+	# Saves from before food and light start fed and lit
+	var inv = dict["inventory"]
+	Ref.character.inventory.food = inv.get("food", Supplies.FOOD_START)
+	Ref.character.inventory.light = inv.get("light", Supplies.LIGHT_MAX)
+	Ref.character.inventory.rations = inv.get("rations", 2)
+	Ref.character.inventory.torches = inv.get("torches", 2)
+	Ref.character.inventory.arrows = inv.get("arrows", 0)
+	Ref.character.inventory.stones = inv.get("stones", 0)
 	Ref.character.stats.charName = dict["stats"]["name"]
 	Ref.character.stats.xp = dict["stats"]["xp"]
 	Ref.character.stats.level = dict["stats"]["level"]
@@ -346,9 +405,16 @@ func saveGlobals() -> Dictionary:
 		"hiddenDoors": GLOBAL.hiddenDoors,
 		"lockedDoors": GLOBAL.lockedDoors,
 		"testedDoors": GLOBAL.testedDoors,
+		"known": GLOBAL.known,
 	}
 
 func loadGlobals(dict: Dictionary):
+	# Saves from before identification have no list, everything counts as known there
+	if dict.has("known"):
+		GLOBAL.known = dict["known"]
+	else:
+		Identify.reset()
+		Identify.learnEverything()
 	GLOBAL.itemsOnFloor.clear()
 	for pilePos in dict["itemsOnFloor"].keys():
 		var item = dict["itemsOnFloor"][pilePos]

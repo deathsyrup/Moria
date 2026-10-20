@@ -54,13 +54,12 @@ func update():
 func trigger(entity):
 	if entity == relativeTo:
 		return
-	if isAllied:
-		if entity is Character:
-			return
-		#TODO check if allied
-	else:
-		#TODO check not allied
-		pass
+	# Was: an allied aura hurt allied monsters and a hostile aura hurt every monster
+	# (both branches were #TODO). Allied auras now only hurt enemies and hostile
+	# auras only hurt the player and allies.
+	var entityIsAllied = entity is Character or entity.status == "help"
+	if isAllied == entityIsAllied:
+		return
 	match type:
 		FIRE_AURA:
 			var dmgDice = [GeneralEngine.dmgDice(0, 0, 1, Data.DMG_FIRE)]

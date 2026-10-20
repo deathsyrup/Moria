@@ -20,6 +20,9 @@ func open(id: int):
 	chestId = id
 	if !GLOBAL.chests[id][GLOBAL.CH_OPENED]:
 		animator.play("Open")
+		Ref.character.floorChests += 1
+		Progress.add("chests")
+		Sfx.play("chest_open")
 		GLOBAL.chests[id][GLOBAL.CH_OPENED] = true
 	else:
 		animator.play("Skip")
@@ -31,10 +34,14 @@ func open(id: int):
 	MasterInput.setMaster(self)
 
 func close():
-	for item in GLOBAL.chests[chestId][GLOBAL.CH_CONTENT]:
-		GLOBAL.dropItemOnFloor(item, instance_from_id(chestId).pos)
-	instance_from_id(chestId).queue_free()
-	GLOBAL.chests.erase(chestId)
+	# Was: assumed the chest still existed, so a second close() read
+	# GLOBAL.chests[chestId] after it had been erased
+	if GLOBAL.chests.has(chestId):
+		var chest = instance_from_id(chestId)
+		for item in GLOBAL.chests[chestId][GLOBAL.CH_CONTENT]:
+			GLOBAL.dropItemOnFloor(item, chest.pos)
+		chest.queue_free()
+		GLOBAL.chests.erase(chestId)
 	visible = false
 	Ref.currentLevel.visible = true
 	GLOBAL.currentMode = GLOBAL.MODE_NORMAL
@@ -57,6 +64,9 @@ func _input(event):
 		else:
 			Ref.ui.askForNumber(selected.size(), self)
 			var coroutineReturn = yield(Ref.ui, "coroutine_signal")
+			if not GLOBAL.chests.has(chestId):
+				# Was: carried on and read the erased chest after the prompt returned
+				return
 			GLOBAL.currentMode = GLOBAL.MODE_CHEST
 			if coroutineReturn != null and coroutineReturn is int:
 				var subSelected = selected.slice(0, coroutineReturn-1)

@@ -1,0 +1,15 @@
+[remap]
+
+importer="ogg_vorbis"
+type="AudioStreamOGGVorbis"
+path="res://.import/chest_open.ogg-372572418afbea7c3876f5ca1fd629da.oggstr"
+
+[deps]
+
+source_file="res://sounds/sfx/chest_open.ogg"
+dest_files=[ "res://.import/chest_open.ogg-372572418afbea7c3876f5ca1fd629da.oggstr" ]
+
+[params]
+
+loop=false
+loop_offset=0

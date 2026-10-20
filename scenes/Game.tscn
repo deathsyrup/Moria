@@ -662,6 +662,87 @@ __meta__ = {
 "_edit_use_anchors_": true
 }
 
+[node name="FoodContainer" type="Node2D" parent="UI/SideMenu"]
+position = Vector2( 360, 117 )
+scale = Vector2( 0.25, 0.25 )
+
+[node name="Label" type="Label" parent="UI/SideMenu/FoodContainer"]
+margin_right = 72.0
+margin_bottom = 35.0
+custom_fonts/font = ExtResource( 8 )
+text = "Food"
+align = 1
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": true
+}
+
+[node name="Current" type="Label" parent="UI/SideMenu/FoodContainer/Label"]
+margin_left = 72.0
+margin_right = 180.0
+margin_bottom = 35.0
+custom_fonts/font = ExtResource( 8 )
+text = "10"
+align = 2
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": true
+}
+
+[node name="LightContainer" type="Node2D" parent="UI/SideMenu"]
+position = Vector2( 360, 126 )
+scale = Vector2( 0.25, 0.25 )
+
+[node name="Label" type="Label" parent="UI/SideMenu/LightContainer"]
+margin_right = 72.0
+margin_bottom = 35.0
+custom_fonts/font = ExtResource( 8 )
+text = "Light"
+align = 1
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": true
+}
+
+[node name="Current" type="Label" parent="UI/SideMenu/LightContainer/Label"]
+margin_left = 72.0
+margin_right = 180.0
+margin_bottom = 35.0
+custom_fonts/font = ExtResource( 8 )
+text = "10"
+align = 2
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": true
+}
+
+[node name="AmmoContainer" type="Node2D" parent="UI/SideMenu"]
+position = Vector2( 360, 135 )
+scale = Vector2( 0.25, 0.25 )
+
+[node name="Label" type="Label" parent="UI/SideMenu/AmmoContainer"]
+margin_right = 72.0
+margin_bottom = 35.0
+custom_fonts/font = ExtResource( 8 )
+text = "Ammo"
+align = 1
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": true
+}
+
+[node name="Current" type="Label" parent="UI/SideMenu/AmmoContainer/Label"]
+margin_left = 72.0
+margin_right = 180.0
+margin_bottom = 35.0
+custom_fonts/font = ExtResource( 8 )
+text = "10"
+align = 2
+valign = 1
+__meta__ = {
+"_edit_use_anchors_": true
+}
+
 [node name="rFire" type="Node2D" parent="UI/SideMenu"]
 position = Vector2( 360, 99 )
 scale = Vector2( 0.25, 0.25 )

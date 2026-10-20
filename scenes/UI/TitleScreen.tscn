@@ -12,55 +12,7 @@
 [ext_resource path="res://sprites/titleName.png" type="Texture" id=10]
 [ext_resource path="res://themes/LabelTheme.tres" type="Theme" id=11]
 [ext_resource path="res://sprites/title_gate_open3.png" type="Texture" id=12]
-
-[sub_resource type="GDScript" id=5]
-script/source = "extends Node2D
-
-onready var labels = get_node(\"Background/Title/Menu/Labels\").get_children()
-onready var cursor = get_node(\"Background/Title/Menu/Cursor\")
-onready var animator = get_node(\"Animator\")
-
-var choice = 0
-
-func _ready():
-	set_process_input(true)
-
-func _input(event):
-	if event.is_action_released(\"ui_down\"):
-		setChoice(choice + 1)
-	elif event.is_action_released(\"ui_up\"):
-		setChoice(choice - 1)
-	elif event.is_action_released(\"ui_accept\"):
-		validateChoice()
-
-func setChoice(newChoice: int):
-	newChoice = Utils.modulo(newChoice, labels.size())
-	labels[choice].remove_color_override(\"font_color\")
-	choice = newChoice
-	labels[choice].add_color_override(\"font_color\", Colors.yellow)
-	cursor.position.y = choice * 36
-
-func validateChoice():
-	match choice:
-		0:
-			set_process_input(false)
-			animator.play(\"EnterDoor\")
-		1:
-			set_process_input(false)
-			animator.play(\"EnterDoor\")
-		5:
-			get_tree().notification(MainLoop.NOTIFICATION_WM_QUIT_REQUEST)
-
-
-func _on_Animator_animation_finished(anim_name):
-	match choice:
-		0:
-			GLOBAL.startingMode = 0
-			get_tree().change_scene(\"res://scenes/Game.tscn\")
-		1:
-			GLOBAL.startingMode = 7
-			get_tree().change_scene(\"res://scenes/Game.tscn\")
-"
+[ext_resource path="res://scripts/ui/TitleScreen.gd" type="Script" id=13]
 
 [sub_resource type="AnimatedTexture" id=3]
 frames = 4
@@ -169,7 +121,7 @@ tracks/2/keys = {
 }
 
 [node name="TitleScreen" type="Node2D"]
-script = SubResource( 5 )
+script = ExtResource( 13 )
 
 [node name="Background" type="Sprite" parent="."]
 position = Vector2( 1308, 520 )

@@ -33,6 +33,37 @@ var specialEntries: Array = [null, null]
 var specialCells: Array = []
 var isBossRomm: bool = false
 
+# The map is bigger than the part of the screen it is drawn in. The camera scrolls it so the
+# character stays in view, the shake effect adds a small offset on top.
+const BASE_POSITION = Vector2(6, 6)
+var cameraOffset = Vector2.ZERO
+var shakeOffset = Vector2.ZERO
+var cameraTween: Tween
+
+func applyPosition():
+	position = BASE_POSITION - cameraOffset + shakeOffset
+
+func setCamera(offset: Vector2):
+	cameraOffset = offset.round()
+	applyPosition()
+
+# Put the camera on a cell. Not instant: a short smooth scroll, used while walking.
+func centerOn(cell: Vector2, instant: bool = true):
+	var view = Vector2(GLOBAL.MAP_VIEW_COLS, GLOBAL.MAP_VIEW_ROWS) * 9
+	var map = Vector2(GLOBAL.FLOOR_SIZE_X, GLOBAL.FLOOR_SIZE_Y) * 9
+	var target = cell * 9 + Vector2(4.5, 4.5) - view / 2
+	target.x = clamp(target.x, 0, max(0, map.x - view.x))
+	target.y = clamp(target.y, 0, max(0, map.y - view.y))
+	if cameraTween == null:
+		cameraTween = Tween.new()
+		add_child(cameraTween)
+	cameraTween.remove_all()
+	if instant:
+		setCamera(target)
+		return
+	cameraTween.interpolate_method(self, "setCamera", cameraOffset, target, 0.1)
+	cameraTween.start()
+
 func _ready():
 	Ref.currentLevel = self
 
@@ -40,9 +71,11 @@ func refresh_view():
 	clearFog()
 	GLOBAL.targets.clear()
 	Ref.character.currentVision.clear()
-	for i in range(-GLOBAL.VIEW_RANGE+1, GLOBAL.VIEW_RANGE):
-		for j in range(-GLOBAL.VIEW_RANGE+1, GLOBAL.VIEW_RANGE):
-			if pow(i, 2) + pow(j, 2) <= pow(GLOBAL.VIEW_RANGE, 2):
+	# Was always the full range: a torch that runs out now shrinks the lit circle (Supplies)
+	var radius = Supplies.lightRadius()
+	for i in range(-radius+1, radius):
+		for j in range(-radius+1, radius):
+			if pow(i, 2) + pow(j, 2) <= pow(radius, 2):
 				var pos = Ref.character.pos
 				var points = Ref.game.pathfinder.get_line(pos, pos+Vector2(i,j))
 				var currentPath = []
@@ -68,6 +101,8 @@ func refresh_view():
 						break
 					if vision[0] and not Ref.character.currentVision.has(p):
 						Ref.character.currentVision.append(p)
+	if not GLOBAL.targets.empty():
+		Tips.show("enemy", "Walk into an enemy to attack it. T throws, C casts, and a corridor keeps them coming one at a time.")
 	for m in monsters.get_children():
 		if fog.get_cellv(m.pos) == 0:
 			m.bodySprite.visible = true
@@ -280,9 +315,12 @@ func createChest():
 			addChest(cell, 0)
 			return
 
-func placeTrap(pos: Vector2, idx: int = Data.TR_DART):
+func placeTrap(pos: Vector2, idx: int = -1):
 	if GLOBAL.trapsByPos.has(pos):
 		return
+	# Was always a spike trap. Each area has its own mix of traps (Data.trapWeights).
+	if idx < 0:
+		idx = Data.randomTrapType(WorldHandler.currentBiome)
 	var trap = trapScene.instance()
 	traps.add_child(trap)
 	trap.init(idx, pos)
@@ -336,6 +374,7 @@ func openDoor(pos):
 		GLOBAL.testedDoors.erase(pos)
 		Ref.game.pathfinder.dijkstraCompute()
 	dungeon.set_cellv(pos, GLOBAL.DOOR_ID, false, false, false, Vector2(0, 0))
+	Sfx.play("door_open")
 
 func target(pos: Vector2, isBoss: bool = false):
 	targetArrow.visible = true

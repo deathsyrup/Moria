@@ -129,6 +129,9 @@ func getStatusRank(entity, type: int) -> int:
 
 func decreaseStatusesTime(entity):
 	entity.stats.applyPoison()
+	# Regeneration was a status with a name and an icon and no effect: 1 HP a turn
+	if entity.statuses.has(Data.STATUS_REGENERATE):
+		regenerate(entity)
 	var toRefresh = false
 	for type in entity.statuses.keys():
 		for st in entity.statuses[type]:
@@ -197,6 +200,10 @@ func applyEffect(entity):
 				dmgWeapon(entity, 1, 4 + 2 * rank, Data.DMG_RADIANT)
 			Data.STATUS_FIRE_BLADE:
 				dmgWeapon(entity, 1, 4 + 2 * rank, Data.DMG_FIRE)
+			Data.STATUS_MIGHT:
+				# Doubles the weapon damage: one more copy of the first damage dice
+				var base = entity.stats.dmgDices[0]
+				entity.stats.addDmg(GeneralEngine.dmgDice(base.dice.n, base.dice.d, 0, base.type))
 			Data.STATUS_FIRE_AURA:
 				addToResist(entity, Data.DMG_FIRE, 1)
 				if rank > 0:
@@ -291,3 +298,12 @@ func createSimpleStatus(type: int, rank: int, turns: int):
 	status[GLOBAL.ST_TIMING] = GLOBAL.TIMING_TIMER
 	status[GLOBAL.ST_TURNS] = turns
 	return status
+
+func regenerate(entity):
+	if entity is Character:
+		var before = entity.stats.hp
+		entity.stats.updateHp(before + 1)
+		if entity.stats.hp > before:
+			Fx.heal(entity, 1)
+	else:
+		entity.stats.currentHp = min(entity.stats.hpMax, entity.stats.currentHp + 1)
