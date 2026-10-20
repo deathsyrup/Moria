@@ -29,11 +29,16 @@ func askrForRest():
 
 func rest():
 	Ref.character.rest()
-	Ref.ui.fadePanel.connect("fadeIn", self, "waitForInput", [], CONNECT_ONESHOT)
+	# Was: connected unconditionally, so a second request while fading raised
+	# "signal already connected"
+	if not Ref.ui.fadePanel.is_connected("fadeIn", self, "waitForInput"):
+		Ref.ui.fadePanel.connect("fadeIn", self, "waitForInput", [], CONNECT_ONESHOT)
 	Ref.ui.fadePanel.fadeIn()
 
 func wakeUp():
-	Ref.ui.fadePanel.connect("fadeOut", self, "close", [], CONNECT_ONESHOT)
+	# Was: connected unconditionally, accept/cancel pressed twice connected it twice
+	if not Ref.ui.fadePanel.is_connected("fadeOut", self, "close"):
+		Ref.ui.fadePanel.connect("fadeOut", self, "close", [], CONNECT_ONESHOT)
 	Ref.ui.fadePanel.fadeOut()
 
 func waitForInput():

@@ -33,7 +33,9 @@ func throwCharacter(itemId: int):
 			entity.takeHit(GeneralEngine.dmgDice(wpDmg.x, wpDmg.y, 0, Data.DMG_SLASH).roll(Ref.character))
 		else:
 			Ref.ui.writeCharacterMiss(entity.stats.entityName, result, entity.stats.ca)
-	if item[Data.TH_EFFECT] != null:
+	# Was `!= null`: knives, axes and javelins have [] as effect, so applyEffect got an
+	# Array and the script error aborted the throw before the turn ended
+	if item[Data.TH_EFFECT] is int:
 		SpellEngine.applyEffect(Ref.character, instance_from_id(targetId), item[Data.TH_EFFECT], true, 1, 99)
 	Ref.character.inventory.throwings.erase(itemId)
 	Ref.character.shortcuts.refreshShortcuts(GLOBAL.items[itemId][GLOBAL.IT_STACK])
@@ -65,5 +67,6 @@ func castThrowMonster(itemId: int, caster, target, path: Array):
 			target.takeHit(GeneralEngine.dmgDice(wpDmg.x, wpDmg.y, 0, Data.DMG_SLASH).roll(caster))
 		else:
 			Ref.ui.writeMonsterMiss(caster.stats.entityName, target.stats.entityName, result, target.stats.ca)
-	if item[Data.TH_EFFECT] != null:
+	# Was `!= null`, see throwCharacter
+	if item[Data.TH_EFFECT] is int:
 		SpellEngine.applyEffect(caster, target, item[Data.TH_EFFECT], true, 1, 99)

@@ -174,9 +174,17 @@ func startGame():
 
 func nextFloor():
 	if !WorldHandler.getNextLocation():
-		#TODO add a final screen
-		pass
+		# Was an empty #TODO that went on to generate the same floor again
+		victory()
+		return
 	newFloor()
+
+func victory():
+	Ref.ui.write(Ref.ui.color("You have reached the end of the dungeon. You win!", "yellow"))
+	set_process_input(false)
+	Ref.ui.askForContinue(self)
+	yield(Ref.ui, "coroutine_signal")
+	get_tree().change_scene("res://scenes/UI/TitleScreen.tscn")
 
 func cleanFloor():
 	#DEBUG
@@ -197,6 +205,11 @@ func cleanFloor():
 	for m in Ref.currentLevel.monsters.get_children():
 		GLOBAL.monstersByPosition.erase(m.pos)
 		m.free()
+	# Was: never cleared, so a poison cloud kept hurting on the next floor.
+	# Auras tied to a caster (relativeTo) follow the character and stay.
+	for a in Ref.currentLevel.auras.get_children():
+		if a.relativeTo == null:
+			a.free()
 	for n in Ref.currentLevel.npcs.get_children():
 		n.free()
 	for c in Ref.currentLevel.chests.get_children():
@@ -214,6 +227,11 @@ func cleanFloor():
 func testFloor():
 	Ref.currentLevel.levelBuffer.flush()
 	cleanFloor()
+	# Was: allies survived testFloor() (they follow the character between floors),
+	# so a test inherited the allies of the previous one
+	for a in Ref.currentLevel.allies.get_children():
+		GLOBAL.monstersByPosition.erase(a.pos)
+		a.free()
 	dungeonGenerator.simpleFloor()
 	Ref.currentLevel.initShadows()
 	Ref.currentLevel.initSecrets()
@@ -249,6 +267,8 @@ func newFloor():
 		var cell = Ref.character.getRandomCloseCell()
 		if cell == null:
 			a.die()
+			# Was missing: the dead ally went on to setPosition(null)
+			continue
 		a.setPosition(cell)
 #	for i in range(9):
 #		Ref.currentLevel.spawnMonster(i)

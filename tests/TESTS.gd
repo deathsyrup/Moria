@@ -14,6 +14,8 @@ const TEST_INIT = 2
 const TEST_INPUTS = 3
 
 var spawnedItems: Array = []
+var rememberedThrowings: int = 0
+var rememberedXp: int = 0
 
 func runAll():
 	var collection = get_children()
@@ -28,11 +30,12 @@ func runAll():
 	get_tree().quit()
 
 func runCollection(tester: Node):
-	var time_start = Time.get_unix_time_from_system()
+	# Was Time.get_unix_time_from_system(), a Godot 4 API that does not exist in Godot 3
+	var time_start = OS.get_ticks_msec() / 1000.0
 	for testId in tester.tests.keys():
 		runTest(tester, testId)
 		yield(self, "tested")
-	var time_elapsed = Time.get_unix_time_from_system() - time_start
+	var time_elapsed = OS.get_ticks_msec() / 1000.0 - time_start
 	prints("Tested", tester.tests.size(), "/", tester.tests.size(), "in", time_elapsed, "seconds")
 	emit_signal("done")
 
@@ -83,6 +86,18 @@ func fake_low_dice(_testId: int):
 
 func fake_high_dice(_testId: int):
 	GeneralEngine.fakedValue = 6
+
+func fake_remember_throwings(_testId: int):
+	rememberedThrowings = Ref.character.inventory.throwings.size()
+
+func fake_remember_xp(_testId: int):
+	rememberedXp = Ref.character.stats.xp
+
+func fake_wait(_testId: int):
+	pass
+
+func fake_clean_floor(_testId: int):
+	Ref.game.cleanFloor()
 
 func fake_last_printed(_testId: int):
 	Ref.ui.lastPrinted = ""
@@ -173,6 +188,22 @@ func spawn_golds(pos: Vector2, count: int):
 
 func spawn_monster(idx: int, pos: Vector2):
 	Ref.currentLevel.spawnMonster(idx, pos)
+
+func spawn_ally(idx: int, pos: Vector2):
+	Ref.currentLevel.spawnMonster(idx, pos, true)
+
+func aura_cells(center: Vector2) -> Array:
+	var cells = []
+	for i in range(-2, 3):
+		for j in range(-2, 3):
+			cells.append(center + Vector2(i, j))
+	return cells
+
+func spawn_allied_fire_aura(pos: Vector2):
+	Aura.create(aura_cells(pos), Aura.FIRE_AURA, 5, true)
+
+func spawn_hostile_fire_aura(pos: Vector2):
+	Aura.create(aura_cells(pos), Aura.FIRE_AURA, 5, false)
 
 func spawn_trap(idx: int, pos: Vector2):
 	Ref.currentLevel.placeTrap(pos, idx)

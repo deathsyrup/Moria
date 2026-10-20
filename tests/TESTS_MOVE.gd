@@ -159,6 +159,73 @@ const tests = {
 		"ui_up", "ui_up", "ui_up", "ui_up",
 		["assert_creature_awake", Vector2(10, 3)]]
 	],
+	15: [
+		"Allied aura hurts an enemy",
+		Vector2(10, 12),
+		[
+			["spawn_monster", Data.MO_DUMMY, Vector2(10, 3)],
+			["spawn_allied_fire_aura", Vector2(10, 3)],
+			["fake_dice", 1],
+		],
+		["search", "assert_enemy_hurt"]
+	],
+	16: [
+		"Allied aura spares the character and allies",
+		Vector2(10, 12),
+		[
+			["spawn_ally", Data.MO_DUMMY, Vector2(10, 11)],
+			["spawn_allied_fire_aura", Vector2(10, 12)],
+			["fake_dice", 1],
+		],
+		["search", "assert_ally_unhurt", "assert_character_unhurt"]
+	],
+	17: [
+		"Hostile aura hurts the character and allies",
+		Vector2(10, 12),
+		[
+			["spawn_ally", Data.MO_DUMMY, Vector2(10, 11)],
+			["spawn_hostile_fire_aura", Vector2(10, 12)],
+			["fake_dice", 1],
+		],
+		["search", "assert_ally_hurt", "assert_character_hurt"]
+	],
+	18: [
+		"Hostile aura spares an enemy",
+		Vector2(10, 12),
+		[
+			["spawn_monster", Data.MO_DUMMY, Vector2(10, 3)],
+			["spawn_hostile_fire_aura", Vector2(10, 3)],
+			["fake_dice", 1],
+		],
+		["search", "assert_enemy_unhurt"]
+	],
+	19: [
+		"Map auras are cleared with the floor",
+		Vector2(10, 12),
+		[
+			["spawn_allied_fire_aura", Vector2(10, 3)],
+		],
+		["fake_clean_floor", "assert_no_map_auras"]
+	],
+	20: [
+		"Enemy attacks a summon",
+		Vector2(10, 12),
+		[
+			["spawn_monster", Data.MO_DUMMY, Vector2(10, 5)],
+			["spawn_ally", Data.MO_DUMMY, Vector2(10, 6)],
+			["fake_dice", 6],
+		],
+		["fake_remember_xp", "search", "search", "search", "search",
+		"assert_ally_hurt", "assert_xp_unchanged"]
+	],
+	21: [
+		"Group members spawn on free cells they can see",
+		Vector2(10, 12),
+		[
+			["spawn_monster", Data.MO_DUMMY, Vector2(26, 10)],
+		],
+		["assert_near_cells_valid"]
+	],
 }
 
 func assert_last_printed(testId: int, msg: String):
@@ -200,3 +267,44 @@ func assert_creature_sleep(testId: int, pos: Vector2):
 
 func assert_creature_awake(testId: int, pos: Vector2):
 	assert(GLOBAL.getMonsterByPos(pos).status == "awake")
+
+func assert_enemy_hurt(testId: int):
+	# The dummy has 1 HP, it is gone when the aura hurts it
+	var monsters = Ref.currentLevel.monsters
+	assert(monsters.get_child_count() == 0 or monsters.get_child(0).stats.currentHp < monsters.get_child(0).stats.hpMax)
+
+func assert_enemy_unhurt(testId: int):
+	var m = Ref.currentLevel.monsters.get_child(0)
+	assert(m.stats.currentHp == m.stats.hpMax)
+
+func assert_ally_hurt(testId: int):
+	var allies = Ref.currentLevel.allies
+	assert(allies.get_child_count() == 0 or allies.get_child(0).stats.currentHp < allies.get_child(0).stats.hpMax)
+
+func assert_ally_unhurt(testId: int):
+	var m = Ref.currentLevel.allies.get_child(0)
+	assert(m.stats.currentHp == m.stats.hpMax)
+
+func assert_character_hurt(testId: int):
+	assert(Ref.character.stats.hp < Ref.character.stats.hpMax)
+
+func assert_character_unhurt(testId: int):
+	assert(Ref.character.stats.hp == Ref.character.stats.hpMax)
+
+func assert_no_map_auras(testId: int):
+	assert(Ref.currentLevel.auras.get_child_count() == 0)
+
+func assert_xp_unchanged(testId: int):
+	assert(Ref.character.stats.xp == get_parent().rememberedXp)
+
+# Around (26, 10) the test floor has walls on both sides and a monster on the center cell.
+# Run a few times: the cells are picked at random
+func assert_near_cells_valid(testId: int):
+	var handler = Ref.game.dungeonGenerator.encounterHandler
+	for _i in range(100):
+		var cell = handler.getNearFreeCell(Vector2(26, 10))
+		if cell == null:
+			continue
+		assert(cell != Vector2(26, 10))
+		# Rows 9 to 11 are walled on both sides of the corridor, nothing beside it is visible
+		assert(cell.x == 26 or cell.y < 9 or cell.y > 11)

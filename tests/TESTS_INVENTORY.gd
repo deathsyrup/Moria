@@ -184,6 +184,24 @@ const tests = {
 			"assert_target_mode", "ui_cancel"
 		]
 	],
+	15: [
+		"Throw a knife",
+		Vector2(10, 10),
+		[
+			["spawn_throwable", 0, Vector2(11, 10)],
+			["spawn_monster", Data.MO_DUMMY, Vector2(11, 6)],
+		],
+		[
+			"ui_right", "pickLoot", "fake_remember_throwings", "inventory",
+			"ui_right", "ui_right", "ui_right", "ui_right", "throw",
+			"assert_target_mode", "ui_accept",
+			"fake_wait", "fake_wait", "fake_wait", "fake_wait", "fake_wait",
+			"fake_wait", "fake_wait", "fake_wait", "fake_wait", "fake_wait",
+			"fake_wait", "fake_wait", "fake_wait", "fake_wait", "fake_wait",
+			"fake_wait", "fake_wait", "fake_wait", "fake_wait", "fake_wait",
+			"assert_normal_mode", "assert_throwing_used"
+		]
+	],
 }
 func assert_choice_mode(testId: int):
 	assert(GLOBAL.currentMode == GLOBAL.MODE_CHOICE)
@@ -252,3 +270,7 @@ func assert_stackable_in_item_list(testId:int, id: int):
 		if item[4][0] == id:
 			result = true
 	assert(result)
+
+# Throwing a knife used to abort on the Array effect, the item was never consumed
+func assert_throwing_used(testId: int):
+	assert(Ref.character.inventory.throwings.size() < get_parent().rememberedThrowings)

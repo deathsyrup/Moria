@@ -126,7 +126,10 @@ func castSpellMonster(spellId: int, caster, target, path: Array):
 		SpellEngine.breakSanctuary(caster, SpellEngine.SANCT_BUFF)
 
 func spellRebound(spellId: int, caster, initial, spellRank: int, savingCap: int, n: int):
-	var targets = [Ref.currentLevel.allies.get_children()]
+	# Was `[allies.get_children()]`: an Array inside the list, so reading .status on it
+	# (and on the Character, which has none) raised a script error whenever a
+	# monster cast a rebounding spell
+	var targets = Ref.currentLevel.allies.get_children()
 	targets.append(Ref.character)
 	if caster is Character:
 		targets = Ref.currentLevel.monsters.get_children()
@@ -136,7 +139,9 @@ func spellRebound(spellId: int, caster, initial, spellRank: int, savingCap: int,
 	for m in targets:
 		if m == initial:
 			continue
-		if m.status == "dead" or m.status == "help":
+		# Was also skipping allies ("help"), so a monster's rebound could never reach the
+		# player's summons. Only the player's side is ever in the list for a monster caster.
+		if m is Monster and m.status == "dead":
 			continue
 		var los = Ref.currentLevel.canTarget(initial.pos, m.pos)
 		if los.empty():

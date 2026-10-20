@@ -102,8 +102,9 @@ func weaponDescription(item):
 	effectsLabel.text = enchantsList(item)
 
 func shieldDescription(item):
-	#TODO
-	pass
+	# Was an empty #TODO stub. Shields show AC and Prot like armor (fillDescription
+	# already routes them to armorDescription, this keeps both paths identical)
+	armorDescription(item)
 
 func armorDescription(item):
 	icon.frame = item[GLOBAL.IT_ICON]

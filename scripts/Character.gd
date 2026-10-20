@@ -356,10 +356,14 @@ func ignore(entity) -> bool:
 	return false
 
 func die():
+	# Write death message
+	Ref.ui.write("You have died!")
+	# Was: always locked input and changed scene. The test harness lets the character
+	# die, so every later test ran with input off and the scene change freed Game
+	if GeneralEngine.isFaking:
+		return
 	# Disable input
 	Ref.game.set_process_input(false)
-	# Write death message
-	Ref.ui.write("You have died!")	
 	# Brief pause so player can see the death message
 	yield(get_tree().create_timer(4.0), "timeout")
 	

@@ -83,8 +83,17 @@ func chooseEncounter(encounterPool: Array) -> Array:
 func getNearFreeCell(cell: Vector2):
 	for _i in range(15):
 		var n = Utils.chooseRandom(neighbours)
-		if get_parent().enemyCells.has(cell + n):
-			if not exclusions.has(cell + n):
-				#TODO exclude if cannot see
-				return cell + n
+		var near = cell + n
+		if not get_parent().enemyCells.has(near):
+			continue
+		if exclusions.has(near):
+			continue
+		# Was never checking the cell was free: two monsters of a group could be
+		# spawned on the same cell
+		if GLOBAL.monstersByPosition.has(near):
+			continue
+		# Was #TODO: group members spawned behind walls, away from their group
+		if n != Vector2(0, 0) and Ref.currentLevel.canTarget(cell, near).empty():
+			continue
+		return near
 	return null
